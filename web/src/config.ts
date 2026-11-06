@@ -115,7 +115,7 @@ export async function loadDeployment() {
       }),
     ),
   );
-  if (!contracts.HamsterNapHook || !contracts.NapToken)
+  if (!contracts.HamsterNap3D || !contracts.NapToken)
     throw Error("Deployment contracts are missing.");
   const r = await fetch("./abi/SqueekCore.json");
   if (!r.ok) throw Error("SqueekCore ABI could not be loaded.");
@@ -145,7 +145,7 @@ export async function loadDeployment() {
     multiInjectedProviderDiscovery: true,
     connectors: [
       injected(),
-      coinbaseWallet({ appName: "Hamster Nap", preference: "all" }),
+      coinbaseWallet({ appName: "Hamster Nap 3D", preference: "all" }),
     ],
     transports: { [chain.id]: transport() },
   });

@@ -1,11 +1,11 @@
 {
   "chainId": 11155111,
-  "repoUrl": "https://github.com/identity-md-launches/launch-2756-workflow-contract-stage-context",
+  "repoUrl": "https://github.com/identity-md-launches/launch-3077-hamsternap3d",
   "version": 1,
-  "launchId": "26cd3948-7a8f-45b8-9119-8d0a2ad7f3a5",
+  "launchId": "3dde7838-db06-4a6a-a6e1-4081866578d0",
   "manifest": {
     "hook": {
-      "contract": "HamsterNapHook",
+      "contract": "HamsterNap3D",
       "permissions": [
         "beforeInitialize",
         "beforeSwap",
@@ -15,7 +15,8 @@
       ],
       "constructorArgs": [
         "$poolManager",
-        "$factory"
+        "$factory",
+        "$owner"
       ]
     },
     "kind": "univ4_hook",
@@ -25,9 +26,9 @@
       "initialPrice": "79228162514264337593543950336",
       "pairedCurrency": "0x0000000000000000000000000000000000000000"
     },
-    "notes": "Hamster Nap (NAP) on Sepolia. The hook constructor takes the PoolManager and launch factory in that order and reads no external contracts. beforeInitialize accepts only the factory via PoolManager, binds one native-ETH pool and learns its token from PoolKey.currency1. NapToken has no constructor arguments. Neither contract has owner, pause or upgrade powers. Buys charge a 2% game fee on executed gross ETH, separate from the pool's 1.25% LP fee; sells pay no game fee and never read SqueekCore. Buys spending at least 0.001 ETH record tx.origin as the latest qualifying buyer; smaller buys still contribute fees. The fixed SqueekCore proxy is 0x980b4424c007caf7a1f3670b48c8eaef7ebc3d44, with genesis 1793022600 and 600-second rounds. Three consecutive settled zero-work rounds form a nap. Anyone can call settleNaps to process naps in order, paying fees collected before each nap's start to the last qualifying buyer before that start; later fees remain for later games. A continuous zero-work run pays once. Fees become ERC-6909 ETH claims if PoolManager lacks ETH, redeemable through redeemClaims or before payout. Payouts give the winner 100000 gas; failed winner transfers and unused partial-fill fee reservations become withdrawOwed credits. settleNaps reverts with CoreUnreadable when the core cannot be read. The seven-day failsafe opens once the core's frontier has stood still for 7 days, measured from the later of the last observed frontier advance (initially game start) and the frontier round's end. It first settles every nap the core certified before stalling (up to 8 pages, else it reverts with NapsUnsettled until settleNaps catches up), then pays the last qualifying buyer whose buy preceded the failsafe cutoff (the later of the opening and seven days ago) the unpaid fees collected through that buy; later fees stay in the pot until they are themselves seven days old. The first-game Sworn check applies only on mainnet and is skipped on Sepolia. pool.initialPrice records the required reference value; the deployer derives the actual opening price from the launch policy.",
+    "notes": "Hamster Nap 3D (NAP) on Sepolia. HamsterNap3D takes $poolManager, $factory and $owner in that declaration order. NapToken has no constructor arguments. Both constructors read no external contracts. Only PoolManager may invoke the enabled callbacks; beforeInitialize accepts only the launch factory as sender, binds one native-ETH pool and learns the token from PoolKey.currency1. The hook accepts the listed 12500 LP fee and tick spacing 60. Buys charge a 2% game fee on executed gross ETH, separate from the pool's 1.25% LP fee; sells pay no game fee and never read SqueekCore. Buys spending at least 0.001 ETH record tx.origin as the latest qualifying buyer; smaller buys still contribute fees. Three consecutive settled zero-work rounds form a nap. Anyone can call settleNaps to process naps in order, paying unpaid fees collected before each nap's start to the last qualifying buyer before that start. A continuous zero-work run pays once. Fees become ERC-6909 ETH claims if PoolManager lacks ETH, redeemable through redeemClaims or before payout. Failed winner transfers and unused partial-fill fee reservations become withdrawOwed credits. The initial core is 0xfd6c166d4b8e2962e65746a13e5a0797cd4de0c4, with genesis 1793735400 and 600-second rounds, stored as literals. The immutable owner's only administrative powers are setCore and finalizeCore. Before finalization, setCore requires readable pending old-core rounds to be scanned with settleNaps first; if old state or the next pending page is unreadable, unscanned history is dropped. The new configuration and frontier must be readable and the round duration nonzero. A switch preserves the pot, debts, latest buyer and buy history, starts scanning after the new frontier, clears the zero-work run and restarts the seven-day failsafe clock. Winner eligibility uses buy timestamps against the active core's nap start. CoreChanged records switches; CoreFinalized records permanent finalization. Until finalized, core selection can affect winners and repeated switches can delay the failsafe. Finalization fixes this hook's core address and cached timing, but cannot freeze the external proxy's upgrades or reporting. There is no owner fee, administrative withdrawal, ownership transfer, pause or hook upgrade. The failsafe opens seven days after the later of the last observed frontier advance (initially game start, reset on migration) and that frontier round's end. It processes readable certified naps first, requiring settleNaps to catch up if more than eight pages remain, then pays unpaid fees through the last buy before its cutoff to that record's latest qualifying buyer. The cutoff is the later of failsafe opening and seven days ago. The Sworn check applies only to the first game on mainnet and is skipped on Sepolia. pool.initialPrice is the required reference value; the deployer derives the actual opening price from the launch policy's opening market cap and token address.",
     "token": {
-      "name": "Hamster Nap",
+      "name": "Hamster Nap 3D",
       "symbol": "NAP",
       "contract": "NapToken",
       "decimals": 18
@@ -36,22 +37,22 @@
   "contracts": [
     {
       "name": "NapToken",
-      "txHash": "0x9c3f42b373e65da922426224783fa371c0c5c5574dfc3e611734af74e8a2181a",
+      "txHash": "0xed13cca7d9602d2f4c0d20b881b0977da6a945598f45227c0e8298ca7b461ee4",
       "abiHash": "66c0725e9072e2c383f59b9a3baa620d857711ec96837623ad2372c434b83f07",
-      "address": "0xd6259b2b92e60e85dd3cf0d82b41f25cb0147194",
-      "blockNumber": 12031212,
-      "creationCodeHash": "eca3881676de60d5a5801fcc20c72f7c4830c20fa04c58f11a6a95a9399b7293"
+      "address": "0x223ebb976c2a4ea94e1dd5482caff229553cb0e8",
+      "blockNumber": 12079080,
+      "creationCodeHash": "d7f28301ef6c1d84f0f1ce3cda8ee13f85bdb68404f58af646a36ba0ae25a3d4"
     },
     {
-      "name": "HamsterNapHook",
-      "txHash": "0x9c3f42b373e65da922426224783fa371c0c5c5574dfc3e611734af74e8a2181a",
-      "abiHash": "074b4765811b658cdcd2704e12cde81f6eb1ad57b7afda572635e207f6ccd681",
-      "address": "0xfbf041c63692f636170990d190dad6629b07a0cc",
-      "blockNumber": 12031212,
-      "creationCodeHash": "1db0d6daa35a33ae24dd1891a608f54d3562982046392a0256e1e587184eed3b"
+      "name": "HamsterNap3D",
+      "txHash": "0xed13cca7d9602d2f4c0d20b881b0977da6a945598f45227c0e8298ca7b461ee4",
+      "abiHash": "95c4633c2cad94a2b74b84be0b2e21bea4cb7387328b7f2d377a660d037aa4ad",
+      "address": "0x7a7784d2a5e92baf70c43a1a4fc32ea14bc8e0cc",
+      "blockNumber": 12079080,
+      "creationCodeHash": "d95b52b6d91796a62472bcddc867dc478fc8ed20f9a7d12cbc5a44b29946e3ce"
     }
   ],
-  "sourceCommit": "3b65e5a220554f121de6f6f12113836cbb93ac4f",
+  "sourceCommit": "6499353948767b08860e5d7a51818a9cbb59f6ae",
   "abiInstructions": "Build ABIs from this exact source commit; compare canonicalKeccak(abi) with abiHash. Verify deployed code on the stated chain before enabling transactions.",
-  "attestationHash": "c5d89eed51e45e1559295c20486ea410e79b9253ab064b68ed5b811d1a38dab6"
+  "attestationHash": "9ef25cee0e0ca251ee0d189f8a111cd8976ebb7721108248a1c4a291a1f761e3"
 }

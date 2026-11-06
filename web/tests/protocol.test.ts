@@ -19,7 +19,7 @@ const token = h.contracts.find(
   (c: { name: string }) => c.name === "NapToken",
 ).address;
 const hook = h.contracts.find(
-  (c: { name: string }) => c.name === "HamsterNapHook",
+  (c: { name: string }) => c.name === "HamsterNap3D",
 ).address;
 const pool: PoolKey = {
   currency0: zeroAddress,
@@ -185,7 +185,7 @@ test("wrapped router/hook revert bytes decode to actionable errors from the load
   const { routerAbi } = await import("../src/protocol");
   const abi = JSON.parse(
     readFileSync(
-      new URL("../public/abi/HamsterNapHook.json", import.meta.url),
+      new URL("../public/abi/HamsterNap3D.json", import.meta.url),
       "utf8",
     ),
   );
@@ -214,7 +214,7 @@ test("latest qualifying buy time excludes later dust by the same buyer, across r
     latestBuyer: token,
   }));
   const runtime = {
-    contracts: { HamsterNapHook: { address: hook, abi: [] } },
+    contracts: { HamsterNap3D: { address: hook, abi: [] } },
     publicClient: {
       readContract: async ({ args }: { args: bigint[] }) =>
         records[Number(args[0])],

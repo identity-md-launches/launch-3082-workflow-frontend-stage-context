@@ -1,23 +1,180 @@
 {
-  "width": 390,
-  "scrollWidth": 390,
-  "primary": {
-    "x": 36,
-    "y": 773.109375,
-    "width": 318,
-    "height": 49.59375,
-    "top": 773.109375,
-    "right": 354,
-    "bottom": 822.703125,
-    "left": 36
-  },
-  "fontLoaded": true,
-  "headings": [
-    "Connect a wallet",
-    "Last buy before bedtime.",
-    "The wheel is quiet.",
-    "A little NAP?",
-    "A nap in the making",
-    "When bedtime is settled"
+  "checkedAt": "2026-11-06T21:11:53.609Z",
+  "measurements": [
+    {
+      "state": "390px disconnected first screen",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "product": {
+        "x": 54,
+        "y": 210.59375,
+        "width": 154.515625,
+        "height": 24,
+        "bottom": 234.59375
+      },
+      "wallet": {
+        "x": 16,
+        "y": 270.59375,
+        "width": 138.796875,
+        "height": 40,
+        "bottom": 310.59375
+      },
+      "mainAction": {
+        "x": 32,
+        "y": 639.59375,
+        "width": 326,
+        "height": 50,
+        "bottom": 689.59375
+      },
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 192.59375,
+        "bottom": 192.59375
+      },
+      "content": {
+        "x": 16,
+        "y": 208.59375,
+        "width": 358,
+        "height": 118,
+        "bottom": 326.59375
+      },
+      "scrollWidth": 390
+    },
+    {
+      "state": "connected scroll",
+      "width": 320,
+      "fraction": 0.25,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 218.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 320,
+      "fraction": 0.5,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 218.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 320,
+      "fraction": 1,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 218.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 390,
+      "fraction": 0.25,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 192.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 390,
+      "fraction": 0.5,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 192.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 390,
+      "fraction": 1,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 192.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 768,
+      "fraction": 0.25,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 768,
+      "fraction": 0.5,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 768,
+      "fraction": 1,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 1440,
+      "fraction": 0.25,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 1440,
+      "fraction": 0.5,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 1440,
+      "fraction": 1,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 116.59375
+      }
+    }
   ]
 }

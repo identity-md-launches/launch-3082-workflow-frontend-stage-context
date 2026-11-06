@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-11-06T21:10:58.461Z",
+  "status": 200,
+  "schemaVersion": 1,
+  "measurement": {
+    "freshness": "online",
+    "observedAt": "2026-11-06T21:10:02.449Z",
+    "receivedAt": "2026-11-06T21:10:02.554Z",
+    "staleAfterSeconds": 120,
+    "counterEpoch": "c53e3951-4e69-4ad3-b59c-d122a064d15a",
+    "cumulativeWorkUnits": "11048",
+    "provenance": "hardware",
+    "coreStatus": "IDLE",
+    "rpmMilli": 0,
+    "speedMmPerSecond": 0,
+    "distanceMm": 0
+  }
+}

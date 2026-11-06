@@ -296,7 +296,7 @@ export function Trade({
   return (
     <section className="trade panel" id="trade" aria-labelledby="trade-title">
       <div className="section-head">
-        <h2 id="trade-title">A little NAP?</h2>
+        <h2 id="trade-title">Trade NAP</h2>
         <span className="muted small">ETH / NAP</span>
       </div>
       <div className="segmented" role="group" aria-label="Trade direction">
@@ -416,7 +416,7 @@ export function Trade({
           ? "2% to the pot · 1.25% pool fee"
           : "0% game fee · 1.25% pool fee"}
         <br />
-        Test tokens have no monetary value.
+        Sepolia test tokens · no monetary value.
       </p>
       {rightChain && game && game.owed > 0n && (
         <p className="small credit-note">
@@ -449,7 +449,7 @@ export function Trade({
       {quote.isError && (
         <p className="error small" role="alert">
           Quote unavailable.{" "}
-          {friendlyError(quote.error, r.contracts.HamsterNapHook.abi)}{" "}
+          {friendlyError(quote.error, r.contracts.HamsterNap3D.abi)}{" "}
           <button
             type="button"
             className="text-button"
@@ -475,8 +475,7 @@ export function Trade({
       <TxFeedback r={r} tx={permit} />
       <TxFeedback r={r} tx={tx} />
       <p className="smart-note small muted">
-        The hook records the transaction’s originating wallet as buyer. A smart
-        wallet may record its relayer instead.
+        Buyer is the transaction origin. Smart wallets may record a relayer.
       </p>
     </section>
   );

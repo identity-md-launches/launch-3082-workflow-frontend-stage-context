@@ -68,7 +68,7 @@ export function useTransaction(r: Runtime) {
       setStatus("Transaction confirmed.");
     } catch (e) {
       setStatus("");
-      setError(friendlyError(e, r.contracts.HamsterNapHook.abi));
+      setError(friendlyError(e, r.contracts.HamsterNap3D.abi));
     } finally {
       lock.current = false;
       setBusy(false);

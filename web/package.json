@@ -9,7 +9,7 @@
     "build": "node scripts/prepare.mjs && vite build && node scripts/export-manifest.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "verify": "node scripts/verify-export.mjs",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
     "test:browser": "node tests/browser.mjs"
   },
   "dependencies": {

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-31T04:18:20.644Z",
+  "checkedAt": "2026-11-06T21:11:53.609Z",
   "mode": "Production export at /preview/, Chromium, mocked wallet and RPC. No broadcasts.",
   "results": [
     {
@@ -8,6 +8,10 @@
     },
     {
       "name": "Recent winner and payout link decode from the hook event log",
+      "passed": true
+    },
+    {
+      "name": "New core getters and CoreChanged events render with explorer links; admin writes stay outside game UI",
       "passed": true
     },
     {
@@ -51,6 +55,10 @@
       "passed": true
     },
     {
+      "name": "Pot remains fixed and fully visible at 25%, 50% and 100% scroll with reserved initial content space at all tested widths",
+      "passed": true
+    },
+    {
       "name": "No horizontal overflow at 320, 390, 768 and 1440 with connected state",
       "passed": true
     },
@@ -75,6 +83,10 @@
       "passed": true
     },
     {
+      "name": "Finalized core state and CoreFinalized event refresh from chain reads",
+      "passed": true
+    },
+    {
       "name": "Old activity measurements are marked stale",
       "passed": true
     },
@@ -83,7 +95,15 @@
       "passed": true
     },
     {
+      "name": "Running activity reports the measured RPM independently from certified progress",
+      "passed": true
+    },
+    {
       "name": "Phone browser without injection offers all four wallet-browser links and Coinbase Smart Wallet",
+      "passed": true
+    },
+    {
+      "name": "Corrupt implementation ABI blocks startup and signing with a visible reload path",
       "passed": true
     },
     {
@@ -106,6 +126,215 @@
     {
       "state": "connected, utility controls expanded",
       "violations": []
+    }
+  ],
+  "measurements": [
+    {
+      "state": "390px disconnected first screen",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "product": {
+        "x": 54,
+        "y": 210.59375,
+        "width": 154.515625,
+        "height": 24,
+        "bottom": 234.59375
+      },
+      "wallet": {
+        "x": 16,
+        "y": 270.59375,
+        "width": 138.796875,
+        "height": 40,
+        "bottom": 310.59375
+      },
+      "mainAction": {
+        "x": 32,
+        "y": 639.59375,
+        "width": 326,
+        "height": 50,
+        "bottom": 689.59375
+      },
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 192.59375,
+        "bottom": 192.59375
+      },
+      "content": {
+        "x": 16,
+        "y": 208.59375,
+        "width": 358,
+        "height": 118,
+        "bottom": 326.59375
+      },
+      "scrollWidth": 390
+    },
+    {
+      "state": "connected scroll",
+      "width": 320,
+      "fraction": 0.25,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 218.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 320,
+      "fraction": 0.5,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 218.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 320,
+      "fraction": 1,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 218.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 390,
+      "fraction": 0.25,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 192.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 390,
+      "fraction": 0.5,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 192.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 390,
+      "fraction": 1,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 192.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 768,
+      "fraction": 0.25,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 768,
+      "fraction": 0.5,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 768,
+      "fraction": 1,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 1440,
+      "fraction": 0.25,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 1440,
+      "fraction": 0.5,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 116.59375
+      }
+    },
+    {
+      "state": "connected scroll",
+      "width": 1440,
+      "fraction": 1,
+      "pot": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 116.59375
+      }
+    }
+  ],
+  "contrast": [
+    {
+      "selector": ".identity p",
+      "color": "rgb(164, 173, 158)",
+      "background": "rgb(9, 11, 9)",
+      "ratio": 8.509882968729482
+    },
+    {
+      "selector": ".pot-label",
+      "color": "rgb(240, 242, 233)",
+      "background": "rgb(17, 20, 16)",
+      "ratio": 16.42469108458475
+    },
+    {
+      "selector": ".pot-number",
+      "color": "rgb(215, 255, 63)",
+      "background": "rgb(17, 20, 16)",
+      "ratio": 16.144190055123637
+    },
+    {
+      "selector": ".trade .primary",
+      "color": "rgb(18, 22, 7)",
+      "background": "rgb(215, 255, 63)",
+      "ratio": 15.972338631816468
+    },
+    {
+      "selector": ".trade-note",
+      "color": "rgb(164, 173, 158)",
+      "background": "rgb(17, 20, 16)",
+      "ratio": 7.998785940755291
     }
   ],
   "screenshots": "test/scratch/frontend-browser/ (ephemeral); selected final evidence retained under docs/frontend/"

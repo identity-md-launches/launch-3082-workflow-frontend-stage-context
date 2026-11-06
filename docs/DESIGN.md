@@ -1,75 +1,70 @@
-# Hamster Nap: implemented design
+# Hamster Nap 3D: implemented design
 
 ## Overview
 
-An English, mobile-first page for an unofficial Sepolia last-buyer game. The implemented character is a quiet hamster bedroom: a navy canvas, warm cream type, a pale gold primary action, a local sleeping-hamster illustration and restrained mint/lilac status cues. Dense contract data stays readable beside plain action labels.
+A dense, number-first NAP game terminal for Sepolia traders. Near-black surfaces, sharp geometry, monospace figures and one acid accent follow the approved crypto degen direction. Product identity and connection sit above the trading controls without a marketing hero. The ETH pot is the largest figure and stays fixed at the top with its buyer, buy age and certified zero-work count.
 
-The source of truth is `web/src/styles.css`, with composition in `App.tsx`, `Trade.tsx` and `Wallet.tsx`. The design is deliberately dark-only; there is no theme toggle. This document is under `docs/` because the assignment’s overriding path budget forbids creating a root `DESIGN.md`.
+The source of truth is `web/src/styles.css`; composition lives in `App.tsx`, `Trade.tsx` and `Wallet.tsx`. The system is deliberately dark-only. This document is delivered under `docs/` because the assignment's overriding write scope excludes a root `DESIGN.md`.
 
 ## Colors
 
-Primitive and semantic variables are declared at `styles.css:1`. The canonical notation is sRGB hex. Components use semantic roles; illustration colors are contained in the local SVG.
+All semantic tokens are declared in `web/src/styles.css:1`, using sRGB hex. There is no unused theme or extra accent ramp.
 
-| Role                       | Token                             | Implemented value |
-| -------------------------- | --------------------------------- | ----------------- |
-| Page                       | `--color-bg` → `--night-950`      | `#141923`         |
-| Panels                     | `--color-surface` → `--night-900` | `#191f2b`         |
-| Inputs / selected controls | `--color-input` → `--night-800`   | `#222a38`         |
-| Structural borders         | `--color-border` → `--night-700`  | `#303b4d`         |
-| Primary text               | `--color-text` → `--cream-100`    | `#f5f0e4`         |
-| Secondary text             | `--color-muted` → `--night-300`   | `#adb7c9`         |
-| Primary fill / links       | `--color-accent` → `--gold-300`   | `#f3ce85`         |
-| Hover / focus              | `--color-accent-hover`, `--focus` | `#ffe1a8`         |
-| Text on primary            | `--color-on-accent`               | `#141923`         |
-| Settled / running          | `--color-success`                 | `#a5dec6`         |
-| Errors                     | `--color-error`                   | `#ffb1ae`         |
+| Token | Value | Role |
+| --- | --- | --- |
+| `--bg` | `#090b09` | Canvas and amount fields |
+| `--surface` | `#111410` | Pot bar, trade/live panels and wallet sheet |
+| `--raised` | `#1b2018` | Hover surfaces and disabled primary fill |
+| `--text` | `#f0f2e9` | Body text, headings and links |
+| `--muted` | `#a4ad9e` | Secondary labels and pending data |
+| `--line` | `#343c2e` | Structural dividers and field outlines |
+| `--accent` | `#d7ff3f` | Pot figure, primary fill, active direction and certified segments |
+| `--accent-hover` | `#e4ff80` | Primary hover fill |
+| `--accent-ink` | `#121607` | Text on accent fill |
+| `--error` | `#ffa995` | Error and offline/stale text |
+| `--focus` | `#f0f2e9` | Two-pixel keyboard perimeter |
 
-The scene uses `#202636`; resting and crescent decorations use `#d2bfea`. Settled meter segments use `#2b3d3c`. Labels/checkmarks carry meaning alongside color. There are no gradients or text shadows.
-
-Actual browser-computed contrast measurements are in `frontend/render-evidence.json`: body 15.48:1, muted intro 8.71:1, primary button 11.72:1, muted panel data 8.17:1, scene heading 13.27:1, scene link 10.04:1. The pinned probe passed its contrast threshold for all measured text. These are measurements of the inspected states, not a claim about every possible future state.
+The accent marks priority and selected data as requested, while action affordances also use borders, native controls and underlines. Status labels and meter text provide meaning without color. The dialog backdrop is black at 80% opacity. There are no gradients or decorative shadows. Measured solid-background contrast pairs are recorded in `frontend/browser-results.json`; the pinned probe checks measured text against 4.5:1, or 3:1 for large text.
 
 ## Typography
 
-The local `web/src/nunito-latin.woff2` is Nunito’s Latin variable upright face, with `ui-rounded, system-ui, sans-serif` fallbacks. The page uses 400 for prose, 600 for controls/data/section headings and 800 for the main headline. The `@font-face` weight range is 400–800; browser checks confirmed loading at the three used weights. No italic face is requested.
+Prose and controls use `Arial, Helvetica, sans-serif`, with weights 400 and 700. Numbers and address links use `--font-mono`: `SFMono-Regular, Consolas, Liberation Mono, monospace`, with tabular numerals. Fonts are system-provided; no bundled rounded font or font request remains. Actual platform fallback can vary.
 
-The six semantic sizes are `--text-sm` 0.875rem (14px), `--text-base` 1rem (16px), `--text-lg` 1.25rem (20px), `--text-xl` 1.5rem (24px), `--text-2xl` 2rem (32px), and `--text-display` 3rem (48px), at the default root size. The desktop headline is 48px/1.1/800 with -0.035em tracking; mobile uses 32px. Section headings use 24px or 20px/1.25/600. Body line height is 1.5; longer instruction text uses 1.6. Inputs remain at least 24px on mobile.
+The six-size scale is `--text-small` 12px, `--text-body` 14px, `--text-label` 16px, `--text-title` 20px, `--text-heading` 28px and `--text-pot` 48px at a 16px root. Body line height is 1.5; headings and the pot use 1.2. The product heading is 28px on desktop and 20px at 760px and below. Pot figures remain 48px at both widths, with 20px ETH units. Amount fields and RPM use 28px. No tracked uppercase kicker labels are used.
 
-Headings balance their wrapping, short descriptions use pretty wrapping, long IDs can break, and changing numeric values use `font-variant-numeric: tabular-nums`. There are no tracked uppercase section labels. Instruction paragraphs have bounded measures. Full checksummed addresses remain available in explorer links, accessible names/tooltips and copy controls even when the displayed address is shortened.
+Headings balance wrapping; amounts, balances and long addresses can break instead of escaping their columns. Full checksummed addresses are available through explorer links, accessible names/tooltips and copy controls. Rules have a maximum 75-character measure. Native inputs stay above the iOS zoom threshold.
 
 ## Layout
 
-The main content, header and footer share a 1200px maximum width. Desktop padding is 2rem, reduced to 1.5rem at 64rem and 1rem at 46rem. Common grouping gaps are 0.5, 0.75, 1, 1.5, 2 and 3rem. Small custom icon gaps are optical adjustments, not an extra spacing system.
+`.pot-bar` is fixed at top, full width, z-index 20. Its inner content and `.page-shell` share a 1160px maximum outer width. The bar uses three desktop columns and 24px side padding. At 760px and below the pot spans the first row; buyer and progress share the next row with 16px side padding. `App.tsx` measures the bar using `ResizeObserver`, stores `--pot-bar-height` on the root and reserves that height plus 20px (desktop) or 16px (mobile) before the page header. Root scroll padding offsets anchor and focus destinations.
 
-At desktop the arena is a two-column `1.45fr / 1fr` grid with a 1.5rem gap. The live scene/pot occupy the leading column; the trade panel occupies the other column and spans both grid rows. The nap meter is below the game board. At 64rem the ratio becomes `1.2fr / 1fr`, with tighter gaps and stacked game stats. At 46rem the arena becomes a single column in this order: game board, trade, nap meter. The mobile scene is shorter, its secondary paragraph is hidden, and the long smart-wallet explanation stays after the main action.
+Spacing follows 4, 8, 12, 16, 20, 24 and 32px groups. The desktop arena is a two-column grid with a 24px gutter, a flexible live-state panel and a 420px trade column. At 760px and below it stacks with trading first. Header controls, data rows, address wrappers and navigation can wrap. Claim/utility rows stack their controls on mobile; contract links become one column. Sections use 24px padding after a divider, separated by 32px on desktop and 24px on mobile.
 
-At 22rem the header and small data gaps tighten further. Header controls can wrap; the footer’s brand can wrap under text enlargement. The meter segments can wrap their contents instead of forcing horizontal overflow. Native text containers grow rather than clipping content.
-
-The final export was inspected at 320, 390, 768 and 1440 CSS pixels. At 390 × 844, the main button’s measured bottom is 822.70px; the product, pot and wallet control are all visible. Long numeric balances, a full address and 200% root text enlargement were tested separately without horizontal overflow. This was text enlargement, not native browser zoom.
+Rendered checks cover 320, 390, 768 and 1440 CSS pixels, long balances/full addresses, 200% text enlargement and multiple scroll positions. The product, wallet and main trade action fit the first 390 × 844 screen. Browser measurements and screenshots are retained under `frontend/`. Text enlargement is distinct from native browser zoom, which was not tested.
 
 ## Elevation & Depth
 
-The page uses flat tonal surfaces instead of shadows. Borders identify fields, selected/control boundaries and section separators. The wallet dialog uses a 65% black backdrop and the browser’s modal top layer. The skip link has z-index 20 and becomes visible only on focus. The hamster SVG is a decorative scene layer with pointer events disabled; text sits on an opaque scene background.
+The interface is flat. Tonal surfaces group live state and trading; one-pixel borders divide rows, selected tabs and fields. No border-plus-shadow card treatment is used. The accent two-pixel lower edge separates the fixed pot bar. The skip link uses z-index 100; the native modal occupies the browser top layer and its backdrop blocks background interaction.
 
 ## Shapes
 
-`--radius` is 1.5rem for major panels. Primary buttons, the amount field and segmented-control shell use 1rem corners; secondary controls and wallet rows use 0.85rem. Selected segments use 0.75rem. Status dots are circular. The game board clips only its scene boundary. Controls remain inset from the viewport and never use a screen-edge action bar.
+Buttons, inputs, panels, tabs, favicon and sheet have square corners (`border-radius: 0` on controls; no rounded container rules). Six-pixel squares identify wallet/feed state. Three equal rectangular segments display zero-work progress. Wallet vendors' original icon shapes/colors are retained. There is no cartoon, sleeping illustration or bedroom decoration.
 
 ## Components
 
-- **Wallet (`web/src/Wallet.tsx`)**: outlined header trigger; named EIP-6963 rows; branded local icons; mobile wallet-browser rows; connected address/disconnect view; wrong-chain switch action. A native named `<dialog>` traps focus and makes the background inert. Escape, backdrop and the close control dismiss it; focus returns to its trigger. At widths below 46rem it is a bottom sheet with safe-area padding. Rows are at least 52px.
-- **Trade (`web/src/Trade.tsx`)**: segmented buy/sell selection, labeled decimal amount, quote/output/rate, slippage selector, frozen transaction review, primary action and credit notice. Controls progress through connect, switch, approve, allow, review and confirm. Disabled states have adjacent explanations. All signing/receipt operations lock immediately and show local status.
-- **TxFeedback (`Trade.tsx`) / useTransaction (`transactions.ts`)**: stable polite status region, persistent local error, explorer link, separate state per action. A synchronous lock covers wallet prompt through confirmed/refetched state.
-- **Game board and nap meter (`App.tsx`)**: API state text/dot, labeled illustration, authoritative pot, latest buyer and buy age; three certified round segments, frontier, scan position and refresh control. Unknown data is never styled as a measured zero.
-- **Claims pattern (`App.tsx`)**: primary nap processing plus a native disclosure for credits, pot claim redemption and the failsafe. Balances, timing, eligibility and transaction feedback stay with the relevant control.
-- **AddressLink (`App.tsx`)**: checksummed short display, full accessible name, explorer link and copy feedback. Long values wrap in supporting views.
-- **Buttons / links (`styles.css`)**: pale gold filled `.primary`, neutral bordered `.secondary`, underlined `.text-button` and `.copy`, named `.icon-button`. Primary controls are at least 48px, standard actions at least 44px; inline links/copy controls use the spaced inline pattern. Hover is gated by pointer support. Keyboard focus uses an explicit 2px gold outline with 4px offset.
+- `App.tsx` pot-bar pattern: pot, latest qualifying buyer, buy age and settled progress. Loading is an ellipsis/unknown count; failed or old reads explicitly show stale status. Height is measured whenever content or viewport changes.
+- `App.tsx` `AddressLink`: short checksummed link, full title/accessible name and copy action with confirmation. It wraps under long-value stress.
+- `Trade.tsx` `Trade`: native direction buttons with `aria-pressed`, labeled amount input, slippage select and a single filled primary action. States progress through connect, switch, exact approvals, review, confirmation and receipt. Errors remain inline; a smart-wallet origin warning sits with the control.
+- `Trade.tsx` `TxFeedback`: status region, alert error and explorer receipt link. Each transaction hook has its own state and synchronous duplicate lock.
+- `App.tsx` `Claims`: settle control plus native disclosure for withdrawal, pot-claim redemption and failsafe. Live prerequisites gate actions. The contract chooses payout recipients.
+- Core section pattern in `App.tsx`: active proxy, finalization, immutable owner and a native disclosure for `CoreChanged` / `CoreFinalized` events using the shared paginated history window. This game page provides no administrative write form.
+- `Wallet.tsx` `Wallet`: one connect/switch/address button and named native `<dialog>`. EIP-6963 rows include provider marks; phones offer wallet-browser links plus Coinbase Smart Wallet. Rows are at least 52px; Escape/backdrop/close dismiss and focus returns to the trigger. At 639px and below the dialog docks to the bottom.
+- Shared CSS patterns: `.primary`, `.secondary`, `.text-button`, `.section-head`, `.numeric`, `.small`, `.muted`, `.error`, `.address-wrap`, `.status-pill`. Native disabled controls, inline status/error text, hover and 0.96 press scale distinguish interaction states. `:focus-visible` has a two-pixel explicit outline with a three-pixel offset.
 
-Interactive transitions last 120ms with `cubic-bezier(.2,0,0,1)`, and press scale is 0.96. Motion is enabled only under `prefers-reduced-motion: no-preference`. Reduced motion removes smooth scrolling; there is no autoplay, entrance sequence or endless animation.
+Motion consists of named 150ms background/color transitions and press feedback. Reduced motion disables transitions, animation and smooth scrolling; there is no entrance sequence, ticker or endless animation. Forced-colors styles preserve system focus colors.
 
-## Do’s and Don’ts
+## Do's and Don'ts
 
-Reuse the shared content edges, semantic tokens, type scale and button classes when adding an adjacent view. Start with native headings, labels, links and disclosures; connect transaction controls to the existing verification and pending-state pattern. Keep data units and qualifiers beside the value they explain.
+Start another game section inside `.page-shell`, reuse the shared spacing/dividers and put the relevant control beside its state. Use `.numeric` for amounts and IDs, `.small.muted` for supporting data and `.error` only with explanatory text. Reserve a single acid-filled primary action for the trading flow; other actions use neutral controls.
 
-Keep API activity distinct from certified round data, and keep the manifest as the only runtime deployment map. Do not add a second address/RPC file, fictional live values, USD prices without an authorized source, a video-like treatment for the illustration, competing filled action colors, owner controls or an unrequested theme switch.
-
-The documented system was extracted from the final source/export. Native screen-reader sessions, physical phone handoffs, browser-native zoom, forced-colors rendering and slow-motion animation-panel inspection remain unperformed; see `frontend/VALIDATION.md` for the review coverage and limits.
+Keep the prize bar's measured space and the mobile trade-first order. Let values wrap and disclosures grow. Keep contract facts in runtime reads and use the shared deployment configuration. Preserve the blunt, factual vocabulary and test-token context. Rounded cards, rounded type, cartoon art, bedtime copy, invented price charts, profit promises and additional marketing blocks conflict with the approved direction.

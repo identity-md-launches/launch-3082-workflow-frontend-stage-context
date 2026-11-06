@@ -1,29 +1,23 @@
 import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-const b = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH
+    ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+    : {}),
+});
 try {
-  const p = await b.newPage({
+  const page = await browser.newPage({
     viewport: { width: 1200, height: 630 },
     deviceScaleFactor: 1,
   });
-  const art = readFileSync(
-    new URL("../public/hamster.svg", import.meta.url),
-    "utf8",
+  await page.setContent(
+    `<style>*{box-sizing:border-box}body{margin:0;background:#090b09;color:#f0f2e9;font-family:Arial,Helvetica,sans-serif}main{padding:64px;width:1200px;height:630px;border-top:10px solid #d7ff3f}h1{font-size:72px;line-height:1.1;margin:50px 0 28px}p{font-size:28px;color:#a4ad9e;margin:0}.symbol{font:700 32px Consolas,monospace;color:#d7ff3f}.line{height:12px;background:#d7ff3f;width:320px;margin:36px 0}.foot{margin-top:40px;font-size:22px}</style><main><div class="symbol">NAP / ETH · SEPOLIA</div><h1>Hamster Nap 3D</h1><p>Trade NAP. Track the prize pool.</p><div class="line"></div><p>Last buyer before three zero-work rounds.</p><p class="foot">Unofficial community game · Test tokens have no value</p></main>`,
   );
-  const font = readFileSync(
-    new URL("../src/nunito-latin.woff2", import.meta.url),
-  ).toString("base64");
-  await p.setContent(
-    `<style>@font-face{font-family:Nunito;src:url(data:font/woff2;base64,${font})}*{box-sizing:border-box}body{margin:0;background:#191f2b;color:#f5f0e4;font-family:Nunito}main{padding:64px;width:1200px;height:630px;position:relative}h1{font-size:76px;font-weight:800;line-height:1.05;margin:56px 0 24px;max-width:670px;letter-spacing:-3px}p{font-size:26px;color:#adb7c9;margin:0}header{font-size:26px;color:#f3ce85}svg{position:absolute;right:20px;top:180px;width:450px;height:330px}.foot{position:absolute;bottom:50px;font-size:21px;color:#adb7c9}</style><main><header>Hamster Nap · NAP</header><h1>Last buy<br>before bedtime.</h1><p>A last-buyer game on Sepolia testnet.</p>${art}<p class="foot">Unofficial community game · Test tokens of no value</p></main>`,
-  );
-  await p.evaluate(() => document.fonts.ready);
-  await p.screenshot({
+  await page.screenshot({
     path: fileURLToPath(new URL("../public/share.png", import.meta.url)),
   });
-  console.log(
-    "Generated 1200 × 630 share.png from local illustration and font.",
-  );
+  console.log("Generated 1200 × 630 share.png.");
 } finally {
-  await b.close();
+  await browser.close();
 }

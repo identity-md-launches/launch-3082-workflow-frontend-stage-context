@@ -25,7 +25,7 @@ loadDeployment()
     root.render(
       <main className="boot-error">
         <img src="./favicon.svg" width="64" height="64" alt="" />
-        <h1>Hamster Nap</h1>
+        <h1>Hamster Nap 3D</h1>
         <p role="alert">
           {error instanceof Error
             ? error.message

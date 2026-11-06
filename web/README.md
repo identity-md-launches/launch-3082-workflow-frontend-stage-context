@@ -1,76 +1,77 @@
-# Hamster Nap frontend
+# Hamster Nap 3D frontend
 
-A static, English game page for the deployed Hamster Nap token and hook on Ethereum Sepolia. It follows Squeektoshi’s live wheel activity, reads the game pot and certified nap progress, trades ETH/NAP through the configured Uniswap v4 router, and exposes every public game action. No backend, application signer, owner configuration or relay account is needed.
+One English page for the deployed NAP game on Sepolia: trade ETH/NAP, watch the ETH prize pool and certified rounds, settle naps, withdraw owed ETH, redeem pot claims and trigger the failsafe. The fixed prize bar includes the latest qualifying buyer, buy age and zero-work count. Core selection, finalization and core events are read from the new hook. This is an unofficial community game; test tokens have no value.
 
-## Install, run and export
+## Install, develop and export
 
-From the repository root, with Node 22.12+ (validated with Node 24.21.0):
+Node 22.12+ is required. All frontend packages and configuration stay in this directory.
 
 ```sh
-npm ci --prefix web
+npm ci --prefix web --cache web/.cache/npm
 npm run dev --prefix web
 npm run typecheck --prefix web
+npm test --prefix web
 npm run build --prefix web
 npm run verify --prefix web
 npm run preview --prefix web
 ```
 
-The build writes repository-root `dist/`, using Vite `base: './'`, then writes `dist/imd-deployment.json` **after** the export. Commit the whole export together with this source and `package-lock.json`. Rebuild and verify after any change to exported bytes. A publisher can host `dist/` directly at a gateway subpath without rewrites. The production browser tests serve it at `/preview/`, rather than testing the development server.
+The build uses Vite `base: './'`, writes repository-root `dist/`, and then generates `dist/imd-deployment.json` from the final bytes. Host the entire export as static files, including ABI JSON and dynamically imported JS chunks. No backend or rewrite rule is required; navigation uses hashes. After changing any exported file, rebuild the manifest and run verification. The submitted export is already built; publication does not require rebuilding.
 
-`npm run build` extracts the implementation-derived ABI arrays from `docs/abi/<Contract>.json` at the pinned deployed source commit when Git history is available. It verifies each canonical Keccak against the handoff. A source archive without Git history uses the already committed, verified `web/public/abi/` copies, so the build also works after the temporary `.imd/reads/` inputs are removed.
+## Deployment and ABI source of truth
 
-## One runtime deployment configuration
+The app fetches `./imd-deployment.json` and the exact ABI paths declared there. `src/config.ts` creates the public client, chain and wallet connectors from that runtime file. There is no separate runtime address, chain ID or RPC map. The core address comes from the hook's `core()` getter, not a frontend constant. Its `coreFinalized()` and `owner()` getters drive the disclosure line.
 
-The app fetches `./imd-deployment.json`, then the ABI JSON paths in that file. `src/config.ts` constructs both the public RPC and wagmi clients from it. Runtime source contains no independent deployment address, chain ID or public RPC map. The SqueekCore address is read from the hook’s `CORE()` getter, and its pinned ABI is an exported asset. Protocol function signatures live in `src/protocol.ts`; protocol addresses always come from `manifest.network.uniswapV4`.
+`deployment.handoff.json` and `network.handoff.json` are unchanged copies of the supplied public build inputs. They are not imported into the browser bundle. The build extracts raw ABI arrays from `docs/abi/<Contract>.json` at deployed commit `6499353948767b08860e5d7a51818a9cbb59f6ae` using `git show`, verifies each attested canonical Keccak, and exports it. Source archives without that Git object use the committed, verified `public/abi/` copies. The SqueekCore read ABI is also taken from that commit. Contracts and root build configuration are preserved.
 
-The build inputs are `deployment.handoff.json` and `network.handoff.json`, preserved copies of the supplied public handoffs. They are not imported into the browser bundle. Never edit them as a way to change an existing deployment. A new launch needs a validated handoff and matching implementation-derived ABI exports.
+The handoff contains no top-level `poolKey`. The exporter derives its native ETH/NAP key from the attested paired currency, token, fee, spacing and hook. Read-only live verification confirmed the resulting pool ID and token/PoolManager binding. A handoff with a `poolKey` is copied exactly instead. The supplied `network` and `walletAddChain` objects are copied unchanged. Protocol signatures live in `src/protocol.ts`; all protocol addresses come from `network.uniswapV4` at runtime.
 
-This legacy handoff has no top-level `poolKey`. The exporter derives it from the handoff’s native paired currency, token, hook, fee 12500 and tick spacing 60, and includes that key in the runtime manifest. The worker verified its hash against the live hook’s `poolId()`, its token binding, and its PoolManager. A future handoff with `poolKey` is copied directly. The complete `network` and `walletAddChain` objects are copied unchanged.
+The manifest contains the exact contract set, launch ID, chain, deployed source commit and attestation hash. It inventories every other exported file, including HTML and ABIs, with lowercase SHA-256; it excludes itself. `npm run verify` checks safe paths, complete inventory, canonical ABI hashes, exact network/contract binding and size limits. While pinned `.imd/reads/` inputs exist, it also compares the preserved handoff copies against them.
 
-The manifest includes the exact two attested contracts and no extra contract-map entries. It inventories every other exported file with lowercase SHA-256, including HTML, ABI arrays, scripts, styles, font, wallet marks and share image. It does not hash itself. `npm run verify` checks the allowed top-level keys, all handoff identifiers, contract set, canonical ABI hashes, network equality, safe paths, complete inventory, asset hashes and export limits.
+Runtime transactions require verified chain/code/pool binding and fresh game reads. ABI hash checks detect a mismatched exported interface. They do not independently authenticate the supplied attestation or audit deployed bytecode.
 
-At runtime, transactions require successful chain/code/pool verification and fresh game reads. Verification checks nonempty code and pool binding; it is not an independent bytecode audit or a signature verification of the attestation.
+## Wallet and transaction flows
 
-## Wallets and actions
+One connect sheet lists named EIP-6963 providers, then Coinbase Wallet. On a phone without injection, it offers MetaMask, Coinbase, Rabby and Phantom browser links and Coinbase Smart Wallet. No relay, project ID, application signer or private RPC credential is used. An unknown-chain switch (4902) triggers the exact `wallet_addEthereumChain` parameters and a second switch. Wrong-network signing stays gated.
 
-- One wallet sheet lists named EIP-6963 browser providers and Coinbase Wallet. On a phone without injection it offers MetaMask, Coinbase Wallet, Rabby and Phantom browser links, plus Coinbase Smart Wallet. No WalletConnect project ID is used. Wallet marks are local assets.
-- Connecting switches to Sepolia. Unknown-chain error 4902 triggers `wallet_addEthereumChain` with the exact handoff parameters, followed by another switch. A wrong-chain state keeps signing controls gated.
-- Buy: native ETH needs no approval. Sell: first approve the exact NAP amount to Permit2 if necessary, then allow that exact amount to the Universal Router with a one-hour Permit2 expiration. Each step waits for its receipt and refetches allowances before unlocking.
-- Quotes use the network quoter via `simulateContract`. The review freezes the minimum output. Before signing, the app refreshes quotes and allowances, rejects a moved/expired review, and simulates `execute`. It encodes V4_SWAP `0x10` with SWAP_EXACT_IN_SINGLE / SETTLE_ALL / TAKE_ALL (`0x060c0f`), the exact pool key, minimum output and a five-minute deadline. Native value is sent only for an ETH input. The optional extended tuple follows the network flag.
-- Each transaction has its own pending/error/hash state, a synchronous duplicate-submission lock and an explorer link. Wallet account/chain are checked again after simulation. Rejections unlock for retry. Hook/router wrapped custom errors are decoded into recovery messages.
-- Claim calls `settleNaps(8)`, at most 128 rounds. It says “Claim settled nap” when simulation finds a nap, otherwise “Process settled rounds” for eligible backlog work. Anyone may process; the contract selects and pays the historical winner.
-- The expandable credits panel also exposes `withdrawOwed()`, `redeemClaims()` and `failsafe()`, with relevant balances and eligibility. A nonzero wallet credit is linked from the trade panel. There are no owner settings in this deployment.
+Native ETH buys need no approval. Sells show separate exact-amount NAP-to-Permit2 and Permit2-to-router approval steps, only when needed, and wait for their receipts and allowance refresh. Quotes use the configured quoter through `simulateContract`. The reviewed minimum is frozen; execute refreshes the quote and allowances, rejects moved/expired reviews, simulates the router call, and rechecks wallet account/chain before signing. Wire encoding follows V4_SWAP `0x10` and actions `0x060c0f`, with the runtime pool key, selected slippage, five-minute deadline and native value only for ETH input. The optional extended tuple follows the network flag.
 
-The hook records `tx.origin` as buyer. Smart-wallet/relayer transactions may therefore record the relaying EOA, not the smart wallet receiving NAP. The page discloses this before trading.
+Each action has a pending lock, inline errors, confirmation status and transaction explorer link. Claim calls `settleNaps(8)`; the hook selects the historical winner. Credits exposes `withdrawOwed()`, `redeemClaims()` and `failsafe()` with their live prerequisites. The approved game page exposes no `setCore` or `finalizeCore` write controls; core administration is observational here. The page discloses that the owner may change the core and delay the failsafe until finalization, and that finalizing the selection does not freeze the external proxy.
+
+The hook records `tx.origin`, so a smart wallet can record its relayer as buyer. This risk is stated beside trading. Amounts use token decimals; test tokens have no monetary value and there is no invented USD price.
 
 ## Observability
 
-The API status feed is polled every 10 seconds, with schema/freshness checks and explicit running, resting, stale and offline states. The hamster illustration is labeled as an illustration, not a live camera. The console link opens SqueekChain’s real console.
+- SqueekChain status: fetch every 10 seconds, with schema, timestamp and RPM checks; running, resting, stale and offline are distinct. The console link opens the real SqueekChain console. API activity is separate from certified progress.
+- Hook/core/balances: refresh every 12 seconds; stale or failed reads are labeled and signing is gated. Public RPCs intentionally fail over; correct-chain wallet-provider fallback is available for game reads.
+- Quotes: refresh every 15 seconds; allowances every 10 seconds; deployment verification every five minutes.
+- Winners and core events: a bounded 10,000-block window in 2,000-block pages, every 60 seconds. Load older events moves the shared winner/core window backward. Failures are shown, never interpreted as empty history. Events sort by block and log index.
+- Buy age: scan recorded cumulative fee differences backward in pages, excluding later dust by the same buyer, cached by buy count.
 
-Contract reads refresh every 12 seconds, quotations every 15 seconds, allowances every 10 seconds, event history every 60 seconds, and verification every five minutes. Configured public RPCs fail over intentionally; game reads can fall back to the connected wallet provider on the correct chain. Failed/stale reads are not displayed as zero.
-
-The core’s certified frontier is authoritative. Only the last three **settled** rounds are inspected for the current zero-work streak; rounds after the frontier remain unknown. A streak already claimed can still read 3/3 while the hamster rests, so claim eligibility comes from hook simulation, not that meter. The first swap starts this game; pre-start core naps do not create a payout.
-
-The latest qualifying buyer’s timestamp is recovered from the hook’s buy records, scanning backward in pages of 16. Adjacent cumulative fees distinguish a qualifying buy from later dust, including dust by the same buyer, using the pinned fee/minimum constants. The lookup is cached by buy count and supports cancellation. Event history loads a bounded 10,000-block window in 2,000-block RPC pages; “Load older events” moves back another window. History failure is reported rather than treated as no winners.
-
-Amounts use on-chain token decimals and native units. There is no authorized USD price source; test tokens have no monetary value. Quotes display their exchange rate rather than an invented dollar price.
+The three-round meter uses only settled core rounds; it may show 3/3 before the game starts or after a continuous run has paid. Claim eligibility comes from hook simulation rather than the meter.
 
 ## Validation
 
 ```sh
+npm run typecheck --prefix web
 npm test --prefix web
-# Browser binaries are test tooling, kept outside the submitted tree.
-PLAYWRIGHT_BROWSERS_PATH=/tmp/hamster-browsers web/node_modules/.bin/playwright install chromium --only-shell
-PLAYWRIGHT_BROWSERS_PATH=/tmp/hamster-browsers npm run test:browser --prefix web
-web/node_modules/.bin/tsx web/scripts/check-live.ts
+npm run build --prefix web
+npm run verify --prefix web
+# Install test browsers into disposable scratch, not the submission.
+PLAYWRIGHT_BROWSERS_PATH="$PWD/test/scratch/browsers" web/node_modules/.bin/playwright install chromium --only-shell
+PLAYWRIGHT_BROWSERS_PATH="$PWD/test/scratch/browsers" npm run test:browser --prefix web
+# Read-only public chain verification and quote simulation; never signs.
+node --import ./web/node_modules/tsx/dist/loader.mjs web/scripts/check-live.ts
 ```
 
-The browser suite manages and closes its own server and Chromium session. It tests the production export with mock RPC/wallet responses; it never broadcasts. `check-live.ts` uses only public read RPCs and quote simulation, never a key or signing provider. It writes public observation evidence under `docs/frontend/`.
+On hosts Playwright does not recognize, `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` can select its compatible Linux browser build. An installed browser may instead be selected for the browser suite using `PLAYWRIGHT_EXECUTABLE_PATH`. The suite owns and closes its static `/preview/` server and browser within one foreground command. Mock wallets and RPCs prevent any real broadcasts.
 
-The pinned design probe was also run on the final export. See [validation](../docs/frontend/VALIDATION.md), [implemented design](../docs/DESIGN.md), screenshots and machine-readable evidence in `docs/frontend/`. Real wallet extension sessions, phone app handoffs, Coinbase passkeys and funded on-chain execution were not performed. Publication, IPFS pinning, ENS naming and post-publication HTTP/RPC checks belong to the publisher, not this worker.
+The pinned design probe also ran on the production export. See [validation](../docs/frontend/VALIDATION.md), [implemented design](../docs/DESIGN.md), browser results, live observations and selected screenshots under `docs/frontend/`. The design document is under `docs/` because the explicit path budget excludes repository-root `DESIGN.md`.
+
+Funded transactions, real extensions, Coinbase passkeys, physical mobile handoffs and publication checks remain untested. The worker does not deploy contracts, publish a site or pin IPFS. The relative social image is bundled; absolute host-specific social URLs are a publisher concern once a host is known.
 
 ## Assets and attribution
 
-The hamster/favicon SVG artwork is original to this frontend. `share.png` is reproducible from local assets with `scripts/make-share.mjs` and Playwright. Nunito’s local Latin variable font is distributed under SIL OFL. The wallet marks come from RainbowKit 2.2.11 under MIT; trademarks remain with their owners. Notices are retained in `docs/frontend/`.
+The sharp N monogram and share graphic are original frontend assets. `scripts/make-share.mjs` regenerates the 1200 × 630 share PNG with Playwright. Typography uses system Arial/Helvetica and monospace stacks; no remote font is loaded. Wallet marks are retained from RainbowKit 2.2.11 (MIT), with their notice under `docs/frontend/`.
 
-Design work applied the pinned Better Interface guide by Jakub Krehel (MIT, commit `267330e1adfc66a718fb65fa6918c1f06d0a689e`) and its Impeccable documentation method by Paul Bakaus (Apache-2.0, commit `9d715cc4f5564a990ca8345abfdd5df6dc9b41c8`). The pinned Austin Griffith ethskills frontend UX/testing guidance is MIT. Their notices accompany the validation evidence.
+Design/review applies the pinned Better Interface guide by Jakub Krehel (MIT, commit `267330e1adfc66a718fb65fa6918c1f06d0a689e`) and the Impeccable documentation method by Paul Bakaus (Apache-2.0, commit `9d715cc4f5564a990ca8345abfdd5df6dc9b41c8`). The pinned Austin Griffith ethskills frontend UX/testing guidance is MIT. Notices are retained under `docs/frontend/`.

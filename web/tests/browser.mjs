@@ -37,14 +37,30 @@ abis.Permit = parseAbi([
   "function approve(address token,address spender,uint160 amount,uint48 expiration)",
 ]);
 const a = d.contracts.find((c) => c.name === "NapToken").address;
-const h = d.contracts.find((c) => c.name === "HamsterNapHook").address;
-const evidence = JSON.parse(
-  readFileSync(root + "docs/frontend/live-read-evidence.json", "utf8"),
-);
-const core = evidence.game.core;
+const h = d.contracts.find((c) => c.name === "HamsterNap3D").address;
+// Mock outside state uses the pinned implementation defaults, never a separate runtime map.
+const source = readFileSync(root + "src/HamsterNap3D.sol", "utf8");
+const core = source.match(
+  /public core = ISqueekCore\((0x[a-fA-F0-9]{40})\)/,
+)[1];
+const evidence = {
+  configuration: {
+    streamId: "0x" + "01".repeat(32),
+    genesisTimestamp: "1793735400",
+    roundDuration: "600",
+    maxWorkPerRound: "10000",
+    maxRoundsPerBatch: 16,
+    guardian: core,
+    reporter: core,
+    initialWorkPerThousandBlocks: 10000,
+    targetBlocksPerActiveRound: "40",
+    difficultySmoothingRounds: "30",
+    blockUnitsPerBlock: "1000000000",
+  },
+};
 const player = d.contracts[0].address; // Existing public address used only as a mock account; no key.
 const hash = "0x" + "12".repeat(32);
-const head = 12031300n;
+const head = 12079500n;
 const now = BigInt(Math.floor(Date.now() / 1000));
 const block = {
   number: toHex(head),
@@ -90,6 +106,7 @@ let tokenAllowance = 0n,
   quoteFails = false,
   coreFails = false,
   codeMissing = false,
+  finalized = false,
   activity = "resting";
 let failSafeOpen = false;
 const calls = [];
@@ -133,9 +150,33 @@ function rpc(method, params = []) {
     return [
       {
         ...common,
+        logIndex: "0x2",
+        topics: encodeEventTopics({
+          abi: abis.HamsterNap3D,
+          eventName: "CoreChanged",
+          args: { oldCore: player, newCore: core },
+        }),
+        data: "0x",
+      },
+      ...(finalized
+        ? [
+            {
+              ...common,
+              logIndex: "0x3",
+              topics: encodeEventTopics({
+                abi: abis.HamsterNap3D,
+                eventName: "CoreFinalized",
+                args: { core },
+              }),
+              data: "0x",
+            },
+          ]
+        : []),
+      {
+        ...common,
         logIndex: "0x0",
         topics: encodeEventTopics({
-          abi: abis.HamsterNapHook,
+          abi: abis.HamsterNap3D,
           eventName: "NapSettled",
           args: { napStart: 650n, winner: player },
         }),
@@ -145,7 +186,7 @@ function rpc(method, params = []) {
         ...common,
         logIndex: "0x1",
         topics: encodeEventTopics({
-          abi: abis.HamsterNapHook,
+          abi: abis.HamsterNap3D,
           eventName: "Buy",
           args: { buyer: player },
         }),
@@ -173,12 +214,14 @@ function rpc(method, params = []) {
       claimsHeld: 2000000000000000n,
       failsafeOpensAt: failSafeOpen ? now - 1n : now + 604800n,
       failsafeWinner: [player, 20000000000000000n],
-      CORE: core,
+      core,
+      coreFinalized: finalized,
+      owner: player,
       decimals: 18,
       MIN_QUALIFYING_BUY: 1000000000000000n,
       FEE_BPS: 200n,
       ROUND_DURATION: 600n,
-      GENESIS_TIMESTAMP: 1793022600n,
+      GENESIS_TIMESTAMP: 1793735400n,
       balanceOf: 10000000000000000000000n,
       poolBound: true,
       token: a,
@@ -267,11 +310,18 @@ function rpc(method, params = []) {
   throw Error("Unmocked RPC " + method);
 }
 const { server, url } = await serve();
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH
+    ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+    : {}),
+});
 const shots = root + "test/scratch/frontend-browser/";
 mkdirSync(shots, { recursive: true });
 let activePage;
 const results = [];
+const measurements = [];
+const contrast = [];
 const record = (name) => {
   results.push({ name, passed: true });
   console.log("PASS " + name);
@@ -440,7 +490,7 @@ try {
       localFailures.push(response.url());
   });
   await page.goto(url);
-  await page.getByText("The bedtime pot", { exact: true }).waitFor();
+  await page.getByText("Prize pool", { exact: true }).waitFor();
   await page.getByText("Read at block", { exact: false }).waitFor();
   assert.equal(
     await page
@@ -465,12 +515,104 @@ try {
   record(
     "390px product, state and main action on first screen; disconnected balance is neutral",
   );
+  measurements.push(
+    await page.evaluate(() => {
+      const box = (s) => {
+        const r = document.querySelector(s).getBoundingClientRect();
+        return {
+          x: r.x,
+          y: r.y,
+          width: r.width,
+          height: r.height,
+          bottom: r.bottom,
+        };
+      };
+      return {
+        state: "390px disconnected first screen",
+        viewport: { width: innerWidth, height: innerHeight },
+        product: box("h1"),
+        wallet: box(".wallet-button"),
+        mainAction: box(".trade .primary"),
+        pot: box(".pot-bar"),
+        content: box(".site-header"),
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    }),
+  );
+  contrast.push(
+    ...(await page.evaluate(() => {
+      const rgb = (s) =>
+        s
+          .match(/[\d.]+/g)
+          .slice(0, 3)
+          .map(Number);
+      const lum = (c) =>
+        c
+          .map((v) => {
+            const x = v / 255;
+            return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+          })
+          .reduce((a, x, i) => a + x * [0.2126, 0.7152, 0.0722][i], 0);
+      return [
+        ".identity p",
+        ".pot-label",
+        ".pot-number",
+        ".trade .primary",
+        ".trade-note",
+      ].map((selector) => {
+        const el = document.querySelector(selector),
+          color = getComputedStyle(el).color;
+        let e = el,
+          background;
+        while (e) {
+          const bg = getComputedStyle(e).backgroundColor;
+          if (bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+            background = bg;
+            break;
+          }
+          e = e.parentElement;
+        }
+        const a = lum(rgb(color)),
+          b = lum(rgb(background));
+        return {
+          selector,
+          color,
+          background,
+          ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+        };
+      });
+    })),
+  );
+
   await page.getByText("Nap beginning at round 650", { exact: true }).waitFor();
   assert.equal(
     await page.getByRole("link", { name: "View payout", exact: false }).count(),
     1,
   );
   record("Recent winner and payout link decode from the hook event log");
+  await page.getByText("Core change log", { exact: true }).click();
+  await page
+    .getByText(`Block ${head} · Core changed`, { exact: true })
+    .waitFor();
+  assert.equal(
+    await page
+      .locator(".core-events a")
+      .filter({ hasText: "View core event" })
+      .count(),
+    1,
+  );
+  assert.equal(
+    await page.locator("#core .core-line a").getAttribute("href"),
+    `${d.network.explorer}/address/${core}`,
+  );
+  assert.equal(
+    await page.getByRole("button", { name: /Set core|Finalize core/ }).count(),
+    0,
+  );
+  record(
+    "New core getters and CoreChanged events render with explorer links; admin writes stay outside game UI",
+  );
+
   const disconnectedAudit = await new AxeBuilder({ page }).analyze();
   accessibilityScans.push({
     state: "disconnected",
@@ -486,8 +628,15 @@ try {
     JSON.stringify(accessibilityScans),
   );
   await page.keyboard.press("Tab");
-  await page.keyboard.press("Tab");
-  await page.keyboard.press("Tab");
+  for (
+    let i = 0;
+    i < 20 &&
+    !(await page
+      .locator(".wallet-button")
+      .evaluate((e) => document.activeElement === e));
+    i++
+  )
+    await page.keyboard.press("Tab");
   assert.equal(
     await page
       .locator(".wallet-button")
@@ -649,7 +798,7 @@ try {
     .waitFor();
   sent = await page.evaluate(() => window.__onSend);
   const claim = decodeFunctionData({
-    abi: abis.HamsterNapHook,
+    abi: abis.HamsterNap3D,
     data: sent.at(-1).data,
   });
   assert.equal(claim.functionName, "settleNaps");
@@ -692,7 +841,7 @@ try {
       utilitySent.some((t) => {
         try {
           return (
-            decodeFunctionData({ abi: abis.HamsterNapHook, data: t.data })
+            decodeFunctionData({ abi: abis.HamsterNap3D, data: t.data })
               .functionName === name
           );
         } catch {
@@ -732,16 +881,47 @@ try {
       path: shots + `${width}-connected.png`,
       fullPage: true,
     });
+    const barAtTop = await page.locator(".pot-bar").boundingBox();
+    assert.equal(barAtTop.y, 0);
+    assert(barAtTop.height > 0 && barAtTop.height < 320);
+    const contentTop = await page.locator(".site-header").boundingBox();
+    assert(contentTop.y >= barAtTop.height);
+    for (const fraction of [0.25, 0.5, 1]) {
+      await page.evaluate(
+        (f) =>
+          scrollTo(
+            0,
+            (document.documentElement.scrollHeight - innerHeight) * f,
+          ),
+        fraction,
+      );
+      const box = await page.locator(".pot-bar").boundingBox();
+      assert.equal(box.y, 0, `pot fixed at ${width}/${fraction}`);
+      assert.equal(box.height, barAtTop.height);
+      measurements.push({
+        state: "connected scroll",
+        width,
+        fraction,
+        pot: box,
+      });
+      const potBox = await page.locator(".pot-value").boundingBox();
+      assert(potBox.y >= 0 && potBox.y + potBox.height <= box.height);
+    }
+    await page.screenshot({ path: shots + `${width}-bottom-pot.png` });
+    await page.evaluate(() => scrollTo(0, 0));
   }
+  record(
+    "Pot remains fixed and fully visible at 25%, 50% and 100% scroll with reserved initial content space at all tested widths",
+  );
   record(
     "No horizontal overflow at 320, 390, 768 and 1440 with connected state",
   );
   const originals = await page.evaluate(() => {
-    const pot = document.querySelector(".pot-value").firstChild;
+    const pot = document.querySelector(".pot-number");
     const buyer = document.querySelector(".latest .address-wrap a");
     const balance = document.querySelector(".amount-head .small");
     const before = [pot.textContent, buyer.textContent, balance.textContent];
-    pot.textContent = "999,999,999,999,999.999999999999999999 ";
+    pot.textContent = "999,999,999,999,999.999999999999999999";
     buyer.textContent = buyer.title;
     balance.textContent = "Balance: 999,999,999,999,999.999999999999999999";
     return before;
@@ -760,7 +940,7 @@ try {
     fullPage: true,
   });
   await page.evaluate((before) => {
-    document.querySelector(".pot-value").firstChild.textContent = before[0];
+    document.querySelector(".pot-number").textContent = before[0];
     document.querySelector(".latest .address-wrap a").textContent = before[1];
     document.querySelector(".amount-head .small").textContent = before[2];
   }, originals);
@@ -776,10 +956,10 @@ try {
     "Large balances, full address and 200% text enlargement reflow without horizontal scrolling",
   );
   assert.equal(
-    await page.evaluate(() =>
-      [400, 600, 800].every((w) => document.fonts.check(`${w} 16px Nunito`)),
-    ),
-    true,
+    await page
+      .locator(".pot-value")
+      .evaluate((e) => getComputedStyle(e).fontVariantNumeric),
+    "tabular-nums",
   );
   await page.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(
@@ -823,8 +1003,20 @@ try {
   await page.locator(".status-pill.offline").waitFor();
   record("Offline API is labeled separately from certified chain state");
   activity = "stale";
+  finalized = true;
   await page.reload();
   await page.locator(".status-pill.stale").waitFor();
+  await page
+    .locator("#core .status-pill")
+    .filter({ hasText: /^Finalized$/ })
+    .waitFor();
+  await page.getByText("Core change log", { exact: true }).click();
+  await page
+    .getByText(`Block ${head} · Core finalized`, { exact: true })
+    .waitFor();
+  record(
+    "Finalized core state and CoreFinalized event refresh from chain reads",
+  );
   record("Old activity measurements are marked stale");
   codeMissing = true;
   await page.reload();
@@ -836,6 +1028,13 @@ try {
   );
   codeMissing = false;
   coreFails = false;
+  activity = "running";
+  await page.reload();
+  await page.locator(".status-pill.running").waitFor();
+  await page.locator(".rpm").filter({ hasText: "12.0" }).waitFor();
+  record(
+    "Running activity reports the measured RPM independently from certified progress",
+  );
   const mobile = await browser.newContext({
     viewport: { width: 390, height: 844 },
     userAgent:
@@ -890,6 +1089,28 @@ try {
     .filter({ hasText: "No browser wallet detected." })
     .waitFor();
   await noWallet.close();
+  const badAbi = await browser.newContext();
+  await badAbi.route("**/*", async (route) => {
+    if (route.request().url().endsWith("/abi/HamsterNap3D.json"))
+      return route.fulfill({ json: [] });
+    return routeHandler(route);
+  });
+  const badPage = await badAbi.newPage();
+  await badPage.goto(url);
+  await badPage
+    .getByRole("alert")
+    .filter({ hasText: "ABI verification failed" })
+    .waitFor();
+  assert.equal(
+    await badPage
+      .getByRole("button", { name: /Review buy|Confirm buy/ })
+      .count(),
+    0,
+  );
+  await badAbi.close();
+  record(
+    "Corrupt implementation ABI blocks startup and signing with a visible reload path",
+  );
   record(
     "Desktop missing-wallet state explains recovery and keeps Coinbase available",
   );
@@ -908,6 +1129,8 @@ try {
         localResourceFailures: localFailures,
         cancelledRequestsDuringNavigation: localNavigationAborts.length,
         accessibilityScans,
+        measurements,
+        contrast,
         screenshots:
           "test/scratch/frontend-browser/ (ephemeral); selected final evidence retained under docs/frontend/",
       },

@@ -1,14 +1,20 @@
 {
-  "scopeCheck": "PASS",
-  "budgetBytes": 8388608,
-  "addedFilesAtInventory": 79,
-  "addedBytesAtInventory": 2768651,
-  "inventoryExcludesThisReport": true,
-  "productionAssets": 19,
-  "productionAssetBytes": 1538382,
-  "generatedDependenciesOrArchivesInSubmission": false,
-  "protectedSourceAndConfigurationChanged": false,
-  "ignoreFilePathAllowance": "web/.gitignore explicitly authorized by the assignment",
-  "designDocumentPath": "docs/DESIGN.md (root path excluded by overriding scope)",
-  "localGitCommit": "Not performed: .git/index.lock is on a read-only file system; files ready for submission capture."
+  "checkedAt": "2026-11-06T21:17:08.236716+00:00",
+  "byteLimit": 8388608,
+  "changedNondeletedFileCount": 47,
+  "changedNondeletedFileBytes": 2659471,
+  "conservativeEntireScopedDeliveryBytes": 3165922,
+  "withinBudget": true,
+  "onlyPermittedPathsChanged": true,
+  "dependencyCachesArchivesAndSubmodulesIncluded": false,
+  "ignoreFileAllowance": {
+    "path": "web/.gitignore",
+    "modified": false
+  },
+  "oldDeploymentAddressesInExport": false,
+  "assetCount": 17,
+  "exportBytesExcludingManifest": 1472900,
+  "largestAssetBytes": 582191,
+  "manifestSha256": "96bf49a385b9b8f12b63374a942307327ca5f866a6b7d432f3db5928c7b2b734",
+  "gitCommit": "Unavailable: git add failed because .git/index.lock is on a read-only filesystem."
 }

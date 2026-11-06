@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -89,8 +89,8 @@ function Claims({
     game.timestamp >= game.opens &&
     game.failsafeWinner[1] > 0n;
   const action = (fn: string) => ({
-    address: r.contracts.HamsterNapHook.address,
-    abi: r.contracts.HamsterNapHook.abi,
+    address: r.contracts.HamsterNap3D.address,
+    abi: r.contracts.HamsterNap3D.abi,
     functionName: fn,
     args: fn === "settleNaps" ? [8n] : [],
   });
@@ -98,13 +98,13 @@ function Claims({
     <section className="claims" aria-labelledby="claim-title">
       <div className="section-head">
         <div>
-          <h2 id="claim-title">When bedtime is settled</h2>
+          <h2 id="claim-title">Settle & collect</h2>
           <p className="muted">
             Anyone can claim. The contract pays the winner.
           </p>
         </div>
-        <span className="moon-small" aria-hidden="true">
-          ☾
+        <span className="claim-mark" aria-hidden="true">
+          ↗
         </span>
       </div>
       <div className="claim-row">
@@ -223,6 +223,23 @@ export default function App({ r }: { r: Runtime }) {
   const { data: walletClient } = useWalletClient();
   const [fallbackClient, setFallbackClient] = useState<PublicClient>();
   const [openWallet, setOpenWallet] = useState<() => void>(() => () => {});
+  const potBar = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const bar = potBar.current;
+    if (!bar) return;
+    const update = () =>
+      document.documentElement.style.setProperty(
+        "--pot-bar-height",
+        `${bar.getBoundingClientRect().height}px`,
+      );
+    const observer = new ResizeObserver(update);
+    observer.observe(bar);
+    update();
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--pot-bar-height");
+    };
+  }, []);
   const [clock, setClock] = useState(Date.now());
   const [historyBefore, setHistoryBefore] = useState<bigint>();
   const setOpener = useCallback(
@@ -311,415 +328,478 @@ export default function App({ r }: { r: Runtime }) {
     retry: 1,
   });
   const winners =
-    history.data?.entries.filter((e) => e.kind !== "buy").slice(0, 6) ?? [];
+    history.data?.entries
+      .filter((e) => e.kind === "nap" || e.kind === "failsafe")
+      .slice(0, 6) ?? [];
   const openConnect = () => {
     if (address && chainId !== r.chain.id) {
       document.querySelector<HTMLButtonElement>(".wallet-button")?.click();
     } else openWallet();
   };
+  const coreEvents =
+    history.data?.entries.filter(
+      (e) => e.kind === "coreChanged" || e.kind === "coreFinalized",
+    ) ?? [];
   return (
     <>
       <a className="skip-link" href="#main">
         Skip to game
       </a>
-      <header className="site-header">
-        <a href="#" className="brand" aria-label="Hamster Nap home">
-          <img src="./favicon.svg" alt="" width="36" height="36" />
-          <span>Hamster Nap</span>
-        </a>
-        <nav aria-label="Main navigation">
-          <a href="#how">How to play</a>
-          <a href={CONSOLE_URL} target="_blank" rel="noreferrer">
-            SqueekChain ↗
-          </a>
-        </nav>
-        <Wallet r={r} onOpenReady={setOpener} />
-      </header>
-      <main id="main">
-        <div className="intro">
-          <div>
-            <h1>Last buy before bedtime.</h1>
-            <p>A last-buyer game on Sepolia testnet.</p>
+      <aside ref={potBar} className="pot-bar" aria-label="Live prize pool">
+        <div className="pot-bar-inner">
+          <div className="pot">
+            <div className="pot-label">
+              <span>Prize pool</span>
+              <span className="small muted">
+                {fresh
+                  ? "Live · Sepolia"
+                  : state
+                    ? "Stale · last read"
+                    : "Connecting…"}
+              </span>
+            </div>
+            <p className="pot-value numeric">
+              <span className="pot-number">
+                {state ? amountLabel(state.pot, 18, 6) : "…"}
+              </span>{" "}
+              <span className="pot-unit">ETH</span>
+            </p>
           </div>
-          <span className="network-label">
-            <span aria-hidden="true" className="network-dot" />
-            Sepolia testnet
-          </span>
-        </div>
-        <div className="arena">
-          <section className="game-board panel" aria-label="Live game">
-            <div className="live-scene">
-              <div className="live-copy">
-                <div className="live-label">
-                  Squeektoshi live{" "}
-                  <span className={`status-pill ${status.state}`}>
-                    <span aria-hidden="true" />{" "}
-                    {live.isPending
-                      ? "Loading"
-                      : status.state === "running"
-                        ? "Running"
-                        : status.state === "resting"
-                          ? "Resting"
-                          : status.state === "stale"
-                            ? "Stale"
-                            : "Offline"}
-                  </span>
-                </div>
-                <h2>
-                  {status.state === "running"
-                    ? "Little paws. Big plans."
-                    : status.state === "resting"
-                      ? "The wheel is quiet."
-                      : "A quiet corner of the internet."}
-                </h2>
-                <p className="muted small">
-                  {status.state === "running"
-                    ? `${status.rpm?.toFixed(1)} wheel revolutions / minute`
-                    : status.state === "resting"
-                      ? "Resting is live activity, not a certified nap."
-                      : "The activity feed is unavailable or out of date."}
-                </p>
-                <a
-                  href={CONSOLE_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="scene-link"
-                >
-                  Visit the live console ↗
-                </a>
-              </div>
-              <img
-                className="hamster-art"
-                src="./hamster.svg"
-                alt="A sleepy illustrated hamster tucked under a patchwork blanket beside its wheel"
-              />
-              <span className="art-caption">
-                Illustration · live data from SqueekChain
-              </span>
+          <div className="latest">
+            <span className="small muted">Latest qualifying buyer</span>
+            <div className="buyer-value">
+              {state && hasBuyer(state.latest) ? (
+                <AddressLink address={state.latest} r={r} />
+              ) : state ? (
+                "No qualifying buyer"
+              ) : (
+                "Reading…"
+              )}
             </div>
-            <div className="game-stats">
-              <div className="pot">
-                <span className="muted">The bedtime pot</span>
-                <p className="pot-value numeric">
-                  {state ? amountLabel(state.pot, 18, 5) : "…"} <span>ETH</span>
-                </p>
-                <span className="muted small">
-                  {state
-                    ? "Sepolia ETH · no monetary value"
-                    : "Reading the deployed hook…"}
-                </span>
-              </div>
-              <div className="latest">
-                <span className="muted">Latest qualifying buyer</span>
-                <p>
-                  {state && hasBuyer(state.latest) ? (
-                    <AddressLink address={state.latest} r={r} />
-                  ) : state ? (
-                    "The first spot is open"
-                  ) : (
-                    "Reading…"
-                  )}
-                </p>
-                <span className="muted small">
-                  {state && hasBuyer(state.latest)
-                    ? buyerTime.data
-                      ? `Bought ${ago(buyerTime.data, clock)}`
-                      : buyerTime.isError
-                        ? "Buy time unavailable"
-                        : "Reading buy time…"
-                    : "A qualifying buy takes this spot."}
-                </span>
-              </div>
-            </div>
-          </section>
-          <Trade
-            r={r}
-            game={state}
-            verified={verified.data === true && !verified.isError}
-            fresh={fresh}
-            onConnect={openConnect}
-          />
-          <section className="nap-meter" aria-labelledby="nap-title">
-            <div className="section-head">
-              <h2 id="nap-title">A nap in the making</h2>
-              <span className="muted small">
-                {state?.napProgress !== undefined
-                  ? `${state.napProgress} / 3 settled rounds`
-                  : "Progress unknown"}
-              </span>
+            <span className="small muted">
+              {state && hasBuyer(state.latest)
+                ? buyerTime.data
+                  ? `Bought ${ago(buyerTime.data, clock)}`
+                  : buyerTime.isError
+                    ? "Buy time unavailable"
+                    : "Reading buy time…"
+                : "Buy ≥ 0.001 ETH to qualify"}
+            </span>
+          </div>
+          <div className="nap-counter">
+            <div className="nap-heading">
+              <span className="small muted">Zero-work rounds</span>
+              <strong className="numeric">
+                {state?.napProgress !== undefined ? state.napProgress : "?"}
+                <span className="muted"> / 3</span>
+              </strong>
             </div>
             <div
-              className="rounds"
+              className="nap-segments"
               role="group"
               aria-label={
                 state?.napProgress !== undefined
-                  ? `${state.napProgress} consecutive zero-work rounds out of three`
-                  : "Certified progress unavailable"
+                  ? `${state.napProgress} of 3 settled zero-work rounds`
+                  : "Certified progress unknown"
               }
             >
               {[1, 2, 3].map((n) => (
-                <div
+                <span
                   key={n}
                   className={
                     state?.napProgress !== undefined && state.napProgress >= n
-                      ? "round settled"
-                      : "round"
+                      ? "active"
+                      : ""
                   }
+                />
+              ))}
+            </div>
+            <span className="small muted">Settled onchain</span>
+          </div>
+        </div>
+      </aside>
+      <div className="page-shell">
+        <header className="site-header">
+          <div className="identity">
+            <a href="#main" className="brand">
+              <img src="./favicon.svg" alt="" width="28" height="28" />
+              <h1>Hamster Nap 3D</h1>
+            </a>
+            <p className="small muted">
+              NAP · Last buyer before three zero-work rounds.
+            </p>
+          </div>
+          <Wallet r={r} onOpenReady={setOpener} />
+        </header>
+        <nav className="page-nav" aria-label="Main navigation">
+          <a href="#trade">Trade</a>
+          <a href="#claim-title">Claim</a>
+          <a href="#winners">Winners</a>
+          <a href="#core">Core</a>
+          <a href="#how">Rules</a>
+          <span className="network-label">Sepolia testnet</span>
+        </nav>
+        <main id="main">
+          <div className="arena">
+            <section className="game-board panel" aria-labelledby="live-title">
+              <div className="section-head">
+                <h2 id="live-title">Squeektoshi live</h2>
+                <span className={`status-pill ${status.state}`}>
+                  <span aria-hidden="true" />
+                  {live.isPending
+                    ? "Loading"
+                    : status.state[0].toUpperCase() + status.state.slice(1)}
+                </span>
+              </div>
+              <div className="telemetry">
+                <div className="feed-source">
+                  <span className="small muted">Activity feed</span>
+                  <span className="small muted">10s refresh</span>
+                </div>
+                <p className="numeric rpm">
+                  {status.rpm !== undefined ? status.rpm.toFixed(1) : "…"}
+                  <span className="small muted"> wheel RPM</span>
+                </p>
+              </div>
+              <p className="small muted">
+                {status.state === "resting"
+                  ? "Zero wheel activity. Only settled core rounds count."
+                  : status.state === "running"
+                    ? "Wheel activity detected. Certified progress is separate."
+                    : "Activity feed unavailable or out of date. Chain reads continue."}
+              </p>
+              <a href={CONSOLE_URL} target="_blank" rel="noreferrer">
+                Open SqueekChain console ↗
+              </a>
+              <div className="frontier">
+                <div>
+                  <span className="small muted">Certified frontier</span>
+                  <strong className="numeric">
+                    {state?.frontier !== undefined
+                      ? `#${state.frontier}`
+                      : "Unknown"}
+                  </strong>
+                </div>
+                <div>
+                  <span className="small muted">Next round to scan</span>
+                  <strong className="numeric">
+                    {state?.scan
+                      ? `#${state.scan}`
+                      : state
+                        ? "Not started"
+                        : "…"}
+                  </strong>
+                </div>
+              </div>
+              <div className="read-status small">
+                <span>
+                  {game.isFetching
+                    ? "Refreshing chain state…"
+                    : fresh
+                      ? `Read at block ${state?.block}`
+                      : state
+                        ? "Last read is stale"
+                        : "Connecting to public RPC…"}
+                </span>
+                <button
+                  className="text-button"
+                  type="button"
+                  onClick={() => {
+                    void game.refetch();
+                    void verified.refetch();
+                  }}
+                  disabled={game.isFetching}
                 >
-                  <span aria-hidden="true">
-                    {state?.napProgress !== undefined && state.napProgress >= n
-                      ? "✓"
-                      : "·"}
+                  Refresh state
+                </button>
+              </div>
+              {state?.coreError && (
+                <p className="error small" role="status">
+                  {state.coreError}
+                </p>
+              )}
+              {game.isError && (
+                <p className="error small" role="alert">
+                  Unable to read live game state. Check your connection and
+                  refresh. Previously shown values may be stale.
+                </p>
+              )}
+              {verified.isError && (
+                <p className="error small" role="alert">
+                  Deployment verification unavailable. Trading is disabled.{" "}
+                  {friendlyError(verified.error)}
+                </p>
+              )}
+            </section>
+            <Trade
+              r={r}
+              game={state}
+              verified={verified.data === true && !verified.isError}
+              fresh={fresh}
+              onConnect={openConnect}
+            />
+          </div>
+          <Claims
+            r={r}
+            game={state}
+            ready={verified.data === true && !verified.isError && fresh}
+            onConnect={openConnect}
+          />
+          <section
+            id="winners"
+            className="winners"
+            aria-labelledby="winners-title"
+          >
+            <div className="section-head">
+              <h2 id="winners-title">Recent winners</h2>
+              <span className="small muted">
+                {state ? `${state.naps} naps settled` : "Reading history"}
+              </span>
+            </div>
+            {history.isPending ? (
+              <p className="empty-state">Loading the event log…</p>
+            ) : history.isError ? (
+              <div className="empty-state">
+                <p className="error">
+                  Winner history could not be loaded. This does not mean there
+                  are no winners.
+                </p>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => void history.refetch()}
+                >
+                  Retry history
+                </button>
+              </div>
+            ) : winners.length ? (
+              <ul className="winner-list">
+                {winners.map((w) => (
+                  <li key={`${w.hash}-${w.logIndex}`}>
+                    <div>
+                      {hasBuyer(w.winner) ? (
+                        <AddressLink address={w.winner} r={r} />
+                      ) : (
+                        <span>No qualifying buyer</span>
+                      )}
+                      <span className="small muted">
+                        {w.kind === "nap"
+                          ? `Nap beginning at round ${w.round}`
+                          : "Seven-day failsafe"}
+                      </span>
+                    </div>
+                    <div className="winner-amount numeric">
+                      {amountLabel(w.amount)} ETH
+                      <a
+                        className="small"
+                        href={`${r.deployment.network.explorer}/tx/${w.hash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View payout ↗
+                      </a>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-state">
+                No winners in this event window yet.
+              </p>
+            )}
+            <div className="history-footer small muted">
+              <span>
+                {history.data
+                  ? `Event window: blocks ${history.data.from}–${history.data.to}`
+                  : "Public RPC event history"}
+              </span>
+              <button
+                type="button"
+                className="text-button"
+                disabled={
+                  !history.data ||
+                  history.data.from === 0n ||
+                  history.isFetching
+                }
+                onClick={() => {
+                  if (history.data) setHistoryBefore(history.data.from - 1n);
+                }}
+              >
+                Load older events
+              </button>
+              {historyBefore !== undefined && (
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => setHistoryBefore(undefined)}
+                >
+                  Back to latest
+                </button>
+              )}
+            </div>
+          </section>
+          <section
+            className="core-section"
+            id="core"
+            aria-labelledby="core-title"
+          >
+            <div className="section-head">
+              <h2 id="core-title">Core the hook reads</h2>
+              <span className="status-pill">
+                {fresh && state
+                  ? state.coreFinalized
+                    ? "Finalized"
+                    : "Not finalized"
+                  : "Status unknown"}
+              </span>
+            </div>
+            <div className="core-line">
+              {state ? (
+                <AddressLink address={state.core} r={r} />
+              ) : (
+                <span className="muted">Reading core address…</span>
+              )}
+              <span className="small muted">
+                {state
+                  ? `${state.roundDuration.toString()}s rounds · ${fresh ? "Current read" : "Last read"}`
+                  : "Live from the hook"}
+              </span>
+            </div>
+            <p className="small muted">
+              {state?.coreFinalized
+                ? "Core selection is permanent. External proxy upgrades remain possible."
+                : "Until finalization, the owner can switch cores, affect winner selection and restart the seven-day failsafe."}
+            </p>
+            {state && (
+              <div className="owner-line small">
+                <span className="muted">Immutable owner</span>
+                <AddressLink address={state.owner} r={r} />
+              </div>
+            )}
+            <details>
+              <summary>Core change log</summary>
+              {history.isError ? (
+                <p className="error small">
+                  Core event history is unavailable.{" "}
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => void history.refetch()}
+                  >
+                    Retry core history
+                  </button>
+                </p>
+              ) : history.isPending ? (
+                <p className="small muted">Loading core events…</p>
+              ) : coreEvents.length ? (
+                <ul className="core-events">
+                  {coreEvents.map((e) => (
+                    <li key={`${e.hash}-${e.logIndex}`}>
+                      <span className="small muted">
+                        Block {e.block.toString()} ·{" "}
+                        {e.kind === "coreChanged"
+                          ? "Core changed"
+                          : "Core finalized"}
+                      </span>
+                      <div>
+                        {e.oldCore && (
+                          <>
+                            <AddressLink address={e.oldCore} r={r} />
+                            <span aria-hidden="true"> → </span>
+                          </>
+                        )}
+                        {e.newCore && <AddressLink address={e.newCore} r={r} />}
+                      </div>
+                      <a
+                        className="small"
+                        href={`${r.deployment.network.explorer}/tx/${e.hash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View core event ↗
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="small muted">
+                  No core changes or finalizations in the displayed event
+                  window.
+                </p>
+              )}
+              <p className="small muted">
+                Uses the same block window as Recent winners. Load older events
+                above to look further back.
+              </p>
+            </details>
+          </section>
+          <section id="how" className="how" aria-labelledby="how-title">
+            <h2 id="how-title">Rules</h2>
+            <ol>
+              <li>
+                Buy at least 0.001 ETH to take the latest-buyer slot. Every buy
+                adds 2% of executed gross ETH to the pot. Sells pay no game fee.
+              </li>
+              <li>
+                Three consecutive settled zero-work rounds certify a nap. The
+                last qualifying buyer before its first round wins fees collected
+                before that start. One payout per continuous zero-work run.
+              </li>
+              <li>
+                Anyone can settle. The contract picks the winner. Failed payouts
+                become withdrawable credits; buys during a nap count toward
+                later payouts.
+              </li>
+              <li>
+                A stalled core opens a seven-day failsafe. Process certified
+                naps first. The eligible historical buyer receives fees through
+                the cutoff.
+              </li>
+            </ol>
+          </section>
+          <section
+            className="contracts"
+            id="contracts"
+            aria-labelledby="contracts-title"
+          >
+            <h2 id="contracts-title">Contracts</h2>
+            <div className="contract-links">
+              {r.deployment.contracts.map((c) => (
+                <div key={c.name}>
+                  <span>
+                    {c.name === "NapToken" ? "NAP token" : "Game hook"}
                   </span>
-                  <span>{n * 10} min</span>
+                  <AddressLink address={c.address} r={r} />
                 </div>
               ))}
             </div>
-            <p className="muted small">
-              Three consecutive settled zero-work rounds make a nap. Unsettled
-              rounds are unknown.
+            <p className="small muted">
+              No owner withdrawal, fee change, pause or hook upgrade. Sells do
+              not depend on the core. Pool fee: 1.25%.
             </p>
-            <div className="frontier">
-              <span>
-                Certified frontier{" "}
-                <strong className="numeric">
-                  {state?.frontier !== undefined
-                    ? `#${state.frontier}`
-                    : "Unavailable"}
-                </strong>
-              </span>
-              <span>
-                Next round to scan{" "}
-                <strong className="numeric">
-                  {state?.scan ? `#${state.scan}` : state ? "Not started" : "…"}
-                </strong>
-              </span>
-            </div>
-            {state?.coreError && (
-              <p className="error small">{state.coreError}</p>
-            )}
-            <div className="read-status small">
-              <span>
-                {game.isFetching
-                  ? "Refreshing chain state…"
-                  : fresh
-                    ? `Read at block ${state?.block}`
-                    : state
-                      ? "Last read is stale"
-                      : "Connecting to public RPC…"}
-              </span>
-              <button
-                className="text-button"
-                type="button"
-                onClick={() => {
-                  void game.refetch();
-                  void verified.refetch();
-                }}
-                disabled={game.isFetching}
+            <div className="resources">
+              <a href="./imd-deployment.json" target="_blank" rel="noreferrer">
+                Deployment & ABIs ↗
+              </a>
+              <a
+                href={r.deployment.network.faucets[0]}
+                target="_blank"
+                rel="noreferrer"
               >
-                Refresh state
-              </button>
+                Get test ETH ↗
+              </a>
             </div>
-            {game.isError && (
-              <p className="error small" role="alert">
-                Unable to read live game state. Check your connection and
-                refresh. Previously shown values may be stale.
-              </p>
-            )}
-            {verified.isError && (
-              <p className="error small" role="alert">
-                Deployment verification unavailable. Trading is disabled.{" "}
-                {friendlyError(verified.error)}
-              </p>
-            )}
           </section>
-        </div>
-        <Claims
-          r={r}
-          game={state}
-          ready={verified.data === true && !verified.isError && fresh}
-          onConnect={openConnect}
-        />
-        <section
-          id="winners"
-          className="winners"
-          aria-labelledby="winners-title"
-        >
-          <div className="section-head">
-            <div>
-              <h2 id="winners-title">The bedtime roll call</h2>
-              <p className="muted">
-                Recent winners, straight from the hook’s events.
-              </p>
-            </div>
-            <span className="small muted">
-              {state ? `${state.naps} naps settled` : "Reading history"}
-            </span>
-          </div>
-          {history.isPending ? (
-            <p className="empty-state">Loading the event log…</p>
-          ) : history.isError ? (
-            <div className="empty-state">
-              <p className="error">
-                Winner history could not be loaded. This does not mean there are
-                no winners.
-              </p>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => void history.refetch()}
-              >
-                Retry history
-              </button>
-            </div>
-          ) : winners.length ? (
-            <ul className="winner-list">
-              {winners.map((w) => (
-                <li key={`${w.hash}-${w.round ?? w.kind}`}>
-                  <span className="winner-moon" aria-hidden="true">
-                    ☾
-                  </span>
-                  <div>
-                    {hasBuyer(w.winner) ? (
-                      <AddressLink address={w.winner} r={r} />
-                    ) : (
-                      <span>No qualifying buyer</span>
-                    )}
-                    <span className="small muted">
-                      {w.kind === "nap"
-                        ? `Nap beginning at round ${w.round}`
-                        : "Seven-day failsafe"}
-                      {!hasBuyer(w.winner) ? " · No qualifying buyer" : ""}
-                    </span>
-                  </div>
-                  <div className="winner-amount numeric">
-                    {amountLabel(w.amount)} ETH
-                    <a
-                      className="small"
-                      href={`${r.deployment.network.explorer}/tx/${w.hash}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View payout ↗
-                    </a>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="empty-state">
-              <span className="empty-moon" aria-hidden="true">
-                ☾
-              </span>
-              <p>No winners in this event window yet.</p>
-              <p className="small muted">
-                The first settled nap starts the roll call.
-              </p>
-            </div>
-          )}
-          <div className="history-footer small muted">
-            <span>
-              {history.data
-                ? `Event window: blocks ${history.data.from}–${history.data.to}`
-                : "Public RPC event history"}
-            </span>
-            <button
-              type="button"
-              className="text-button"
-              disabled={
-                !history.data || history.data.from === 0n || history.isFetching
-              }
-              onClick={() => {
-                if (history.data) setHistoryBefore(history.data.from - 1n);
-              }}
-            >
-              Load older events
-            </button>
-            {historyBefore !== undefined && (
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => setHistoryBefore(undefined)}
-              >
-                Back to latest
-              </button>
-            )}
-          </div>
-        </section>
-        <section id="how" className="how" aria-labelledby="how-title">
-          <h2 id="how-title">A small game. A real hamster.</h2>
-          <ol>
-            <li>
-              <span className="step-number">01</span>
-              <h3>Buy a little NAP</h3>
-              <p>
-                Spend at least 0.001 test ETH to become the latest buyer. Every
-                buy adds 2% of its executed ETH to the pot.
-              </p>
-            </li>
-            <li>
-              <span className="step-number">02</span>
-              <h3>Wait for bedtime</h3>
-              <p>
-                Three settled ten-minute rounds with zero work certify a nap.
-                Its start is the first of those rounds.
-              </p>
-            </li>
-            <li>
-              <span className="step-number">03</span>
-              <h3>The earlier buyer wins</h3>
-              <p>
-                The last qualifying buyer before that start wins the earlier
-                fees. Buys during the nap count for the next game.
-              </p>
-            </li>
-          </ol>
-        </section>
-        <section className="contracts" id="contracts">
-          <h2>Under the blanket</h2>
-          <p className="muted">
-            No owner controls, pause or upgrades. Sells do not depend on the
-            hamster feed. Test tokens have no value; USD pricing is unavailable.
+        </main>
+        <footer>
+          <span>Hamster Nap 3D · NAP</span>
+          <p>
+            Unofficial community game. Not affiliated with SqueekChain.
+            <br />
+            Sepolia test tokens have no value. No promise of profit.
           </p>
-          <div className="contract-links">
-            {r.deployment.contracts.map((c) => (
-              <div key={c.name}>
-                <span>{c.name === "NapToken" ? "NAP token" : "Game hook"}</span>
-                <AddressLink address={c.address} r={r} />
-              </div>
-            ))}
-            {state && (
-              <div>
-                <span>SqueekCore · read only</span>
-                <AddressLink address={state.core} r={r} />
-              </div>
-            )}
-          </div>
-          <div className="resources">
-            <a href="./imd-deployment.json" target="_blank" rel="noreferrer">
-              Deployment & ABIs ↗
-            </a>
-            <a
-              href={r.deployment.network.faucets[0]}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Get test ETH ↗
-            </a>
-          </div>
-        </section>
-      </main>
-      <footer>
-        <a className="brand" href="#">
-          <img src="./favicon.svg" alt="" width="28" height="28" />
-          <span>Sweet dreams, Squeektoshi.</span>
-        </a>
-        <p>
-          An unofficial community game. Not affiliated with SqueekChain.
-          <br />
-          Ethereum Sepolia · Test tokens of no value.
-        </p>
-      </footer>
+        </footer>
+      </div>
     </>
   );
 }

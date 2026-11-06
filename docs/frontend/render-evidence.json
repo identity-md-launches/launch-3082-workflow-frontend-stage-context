@@ -1,52 +1,43 @@
 {
-  "viewport": {
-    "width": 320,
-    "height": 844
-  },
-  "horizontalOverflow": false,
-  "fontLoaded": true,
-  "contrastPairs": [
+  "checkedAt": "2026-11-06T21:11:53.609Z",
+  "contrast": [
     {
-      "foregroundSelector": "body",
-      "backgroundSelector": "body",
-      "foreground": "rgb(245, 240, 228)",
-      "background": "rgb(20, 25, 35)",
-      "ratio": 15.48
+      "selector": ".identity p",
+      "color": "rgb(164, 173, 158)",
+      "background": "rgb(9, 11, 9)",
+      "ratio": 8.509882968729482
     },
     {
-      "foregroundSelector": ".intro p",
-      "backgroundSelector": "body",
-      "foreground": "rgb(173, 183, 201)",
-      "background": "rgb(20, 25, 35)",
-      "ratio": 8.71
+      "selector": ".pot-label",
+      "color": "rgb(240, 242, 233)",
+      "background": "rgb(17, 20, 16)",
+      "ratio": 16.42469108458475
     },
     {
-      "foregroundSelector": ".trade .primary",
-      "backgroundSelector": ".trade .primary",
-      "foreground": "rgb(20, 25, 35)",
-      "background": "rgb(243, 206, 133)",
-      "ratio": 11.72
+      "selector": ".pot-number",
+      "color": "rgb(215, 255, 63)",
+      "background": "rgb(17, 20, 16)",
+      "ratio": 16.144190055123637
     },
     {
-      "foregroundSelector": ".game-stats .muted",
-      "backgroundSelector": ".game-stats",
-      "foreground": "rgb(173, 183, 201)",
-      "background": "rgb(25, 31, 43)",
-      "ratio": 8.17
+      "selector": ".trade .primary",
+      "color": "rgb(18, 22, 7)",
+      "background": "rgb(215, 255, 63)",
+      "ratio": 15.972338631816468
     },
     {
-      "foregroundSelector": ".live-copy h2",
-      "backgroundSelector": ".live-scene",
-      "foreground": "rgb(245, 240, 228)",
-      "background": "rgb(32, 38, 54)",
-      "ratio": 13.27
-    },
-    {
-      "foregroundSelector": ".scene-link",
-      "backgroundSelector": ".live-scene",
-      "foreground": "rgb(243, 206, 133)",
-      "background": "rgb(32, 38, 54)",
-      "ratio": 10.04
+      "selector": ".trade-note",
+      "color": "rgb(164, 173, 158)",
+      "background": "rgb(17, 20, 16)",
+      "ratio": 7.998785940755291
     }
-  ]
+  ],
+  "viewports": [
+    320,
+    390,
+    768,
+    1440
+  ],
+  "mode": "Chromium production export; mocked wallet and RPC",
+  "screenshotNote": "Selected screenshots are real rendered mock states, not live winnings or payout claims."
 }

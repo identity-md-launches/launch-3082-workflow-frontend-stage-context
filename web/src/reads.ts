@@ -46,10 +46,10 @@ export async function verifyDeployment(r: Runtime) {
       "Deployed contract code could not be verified. Trading is unavailable.",
     );
   const [id, token, bound, manager] = await Promise.all([
-    read<Hex>(r, "HamsterNapHook", "poolId"),
-    read<Address>(r, "HamsterNapHook", "token"),
-    read<boolean>(r, "HamsterNapHook", "poolBound"),
-    read<Address>(r, "HamsterNapHook", "poolManager"),
+    read<Hex>(r, "HamsterNap3D", "poolId"),
+    read<Address>(r, "HamsterNap3D", "token"),
+    read<boolean>(r, "HamsterNap3D", "poolBound"),
+    read<Address>(r, "HamsterNap3D", "poolManager"),
   ]);
   const expected = keccak256(
     encodeAbiParameters(parseAbiParameters(poolParams), [d.poolKey]),
@@ -59,7 +59,7 @@ export async function verifyDeployment(r: Runtime) {
     id !== expected ||
     token.toLowerCase() !== r.contracts.NapToken.address.toLowerCase() ||
     d.poolKey.hooks.toLowerCase() !==
-      r.contracts.HamsterNapHook.address.toLowerCase() ||
+      r.contracts.HamsterNap3D.address.toLowerCase() ||
     manager.toLowerCase() !== d.network.uniswapV4.poolManager.toLowerCase()
   )
     throw Error(
@@ -86,6 +86,8 @@ export type GameState = {
   block: bigint;
   timestamp: bigint;
   core: Address;
+  coreFinalized: boolean;
+  owner: Address;
   frontier?: bigint;
   napProgress?: number;
   coreError?: string;
@@ -101,7 +103,7 @@ export async function loadGame(
   client: PublicClient = r.publicClient,
 ): Promise<GameState> {
   const hook = <T>(fn: string, args: readonly unknown[] = []) =>
-    read<T>(r, "HamsterNapHook", fn, args, client);
+    read<T>(r, "HamsterNap3D", fn, args, client);
   const [
     pot,
     latest,
@@ -113,6 +115,8 @@ export async function loadGame(
     opens,
     failsafeWinner,
     core,
+    coreFinalized,
+    owner,
     decimals,
     minBuy,
     feeBps,
@@ -133,7 +137,9 @@ export async function loadGame(
     hook<bigint>("claimsHeld"),
     hook<bigint>("failsafeOpensAt"),
     hook<readonly [Address, bigint]>("failsafeWinner"),
-    hook<Address>("CORE"),
+    hook<Address>("core"),
+    hook<boolean>("coreFinalized"),
+    hook<Address>("owner"),
     read<number>(r, "NapToken", "decimals", [], client),
     hook<bigint>("MIN_QUALIFYING_BUY"),
     hook<bigint>("FEE_BPS"),
@@ -157,6 +163,8 @@ export async function loadGame(
     opens,
     failsafeWinner,
     core,
+    coreFinalized,
+    owner,
     decimals,
     minBuy,
     feeBps,
@@ -212,8 +220,8 @@ export async function loadGame(
     if (scan > 0n && scan <= frontier) {
       try {
         const s = await client.simulateContract({
-          address: r.contracts.HamsterNapHook.address,
-          abi: r.contracts.HamsterNapHook.abi,
+          address: r.contracts.HamsterNap3D.address,
+          abi: r.contracts.HamsterNap3D.abi,
           functionName: "settleNaps",
           args: [8n],
           ...(account ? { account } : {}),
@@ -231,7 +239,10 @@ export async function loadGame(
   return game;
 }
 export type HistoryEntry = {
-  kind: "nap" | "failsafe" | "buy";
+  kind: "nap" | "failsafe" | "buy" | "coreChanged" | "coreFinalized";
+  oldCore?: Address;
+  newCore?: Address;
+  logIndex: number;
   winner: Address;
   amount: bigint;
   round?: bigint;
@@ -242,11 +253,17 @@ export type HistoryEntry = {
 export async function loadHistory(r: Runtime, to?: bigint) {
   const head = to ?? (await r.publicClient.getBlockNumber());
   const from = head > 9999n ? head - 9999n : 0n;
-  const c = r.contracts.HamsterNapHook;
+  const c = r.contracts.HamsterNap3D;
   const events = c.abi.filter(
     (e) =>
       e.type === "event" &&
-      ["NapSettled", "FailsafeTaken", "Buy"].includes(e.name),
+      [
+        "NapSettled",
+        "FailsafeTaken",
+        "Buy",
+        "CoreChanged",
+        "CoreFinalized",
+      ].includes(e.name),
   ) as AbiEvent[];
   const history: HistoryEntry[] = [];
   // Bounded pages fit public-provider log limits. Never interpret a failed page as an empty history.
@@ -264,20 +281,29 @@ export async function loadHistory(r: Runtime, to?: bigint) {
       if (log.eventName === "Buy" && !a.qualifying) continue;
       history.push({
         kind:
-          log.eventName === "Buy"
-            ? "buy"
-            : log.eventName === "NapSettled"
-              ? "nap"
-              : "failsafe",
-        winner: (a.winner ?? a.buyer) as Address,
-        amount: (a.amount ?? a.ethSpent) as bigint,
+          log.eventName === "CoreChanged"
+            ? "coreChanged"
+            : log.eventName === "CoreFinalized"
+              ? "coreFinalized"
+              : log.eventName === "Buy"
+                ? "buy"
+                : log.eventName === "NapSettled"
+                  ? "nap"
+                  : "failsafe",
+        winner: (a.winner ?? a.buyer ?? a.newCore ?? a.core) as Address,
+        oldCore: a.oldCore as Address | undefined,
+        newCore: (a.newCore ?? a.core) as Address | undefined,
+        logIndex: log.logIndex!,
+        amount: (a.amount ?? a.ethSpent ?? 0n) as bigint,
         round: (a.napStart ?? a.round) as bigint | undefined,
         hash: log.transactionHash!,
         block: log.blockNumber!,
       });
     }
   }
-  history.reverse();
+  history.sort((a, b) =>
+    a.block === b.block ? b.logIndex - a.logIndex : a.block > b.block ? -1 : 1,
+  );
   const lastBuy = history.find((e) => e.kind === "buy");
   if (lastBuy)
     lastBuy.time = (
@@ -316,7 +342,7 @@ export async function loadLatestBuyTime(
       (_, i) => first + BigInt(i),
     );
     const records = await Promise.all(
-      indices.map((i) => read<BuyRecord>(r, "HamsterNapHook", "buyAt", [i])),
+      indices.map((i) => read<BuyRecord>(r, "HamsterNap3D", "buyAt", [i])),
     );
     for (let i = records.length - 1; i >= Number(start - first); i--) {
       const fee =

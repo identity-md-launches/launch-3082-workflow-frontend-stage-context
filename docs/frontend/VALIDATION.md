@@ -1,101 +1,107 @@
-# Frontend validation
+# Frontend validation: Hamster Nap 3D
 
-Worker report for the Hamster Nap frontend, 2026-10-31. This evidence describes local checks and public read observations; it is not an independent certification or a record of publication.
+## Scope and decisions
 
-## Scope and deployment binding
+Updated the existing Vite/React/TypeScript game page for the newly deployed `HamsterNap3D` hook and `NapToken`, preserving contract source, tests and root configuration. Delivered source/configuration/lockfile under `web/`, a complete static export under `dist/`, and evidence/design documentation under `docs/`. Only those paths changed.
 
-Source is under `web/`; the static export is `dist/`. The deployed source commit is `3b65e5a220554f121de6f6f12113836cbb93ac4f`. Solidity, Foundry configuration, dependencies under `lib/`, root build files and GitHub workflows were preserved. This frontend worker did not redeploy, publish, pin IPFS content or set a site name.
+The approved visual direction is near-black, sharp, dense and number-first, with monospace figures and one acid accent. The pot, buyer, buy age and zero-work count remain at the top. The page adds live core/finalization/owner reads and core event history. Administrative writes are intentionally absent because the approved website limits connected visitors to game/trade actions; it requests a core disclosure line, not a management console.
 
-The runtime loads the exported `imd-deployment.json` and its referenced ABI JSON. Both implementation ABI canonical Keccak hashes match the handoff:
+The explicit overriding write budget does not allow repository-root `DESIGN.md`. The complete implemented design is therefore [docs/DESIGN.md](../DESIGN.md), which is the required document within the permitted documentation scope. No root design file was created.
 
-| Contract       | ABI Keccak, without 0x                                             |
-| -------------- | ------------------------------------------------------------------ |
-| NapToken       | `66c0725e9072e2c383f59b9a3baa620d857711ec96837623ad2372c434b83f07` |
-| HamsterNapHook | `074b4765811b658cdcd2704e12cde81f6eb1ad57b7afda572635e207f6ccd681` |
+The supplied handoff has no top-level pool key. The exporter derives it from the attested ETH pair, token, fee, spacing and new hook. Live read-only verification confirmed its pool ID/token/PoolManager binding. A supplied pool key would instead be copied exactly. Network and wallet-add-chain objects are copied unchanged.
 
-The handoff’s source commit, attestation hash, launch ID, chain ID and complete two-contract set are retained. Network and add-chain objects compare equal to the supplied network handoff. This older handoff has no top-level pool key; its pool terms and deployed hook derive the exported key, whose hash was verified against the live hook’s `poolId()`. The ABI extractor reads the pinned Git commit rather than regenerating interfaces from assumptions.
+## Executed checks
 
-The overriding write budget allows only `web/**`, `dist/**`, `docs/**` and explicitly `web/.gitignore`. Therefore the requested root `DESIGN.md` is delivered as `docs/DESIGN.md`; no root document or build configuration was changed. The one ignore file is within the explicit path allowance and excludes dependency/cache output at every depth beneath `web/`.
+| Check | Result | Evidence |
+| --- | --- | --- |
+| TypeScript | Pass, exit 0 | `typecheck.txt` |
+| Production build | Pass, exit 0 | `build.txt` |
+| Unit tests | 13 pass, 0 fail | `unit-tests.txt` |
+| Production browser interactions | 28 checks pass | `browser-results.json` |
+| Axe scans | 0 violations in disconnected and connected/expanded states | `browser-results.json` |
+| Pinned design probe | 16/16 checks pass | `taste-results.json` |
+| Deployment/export verification | Pass; 17 assets, 1,472,900 bytes excluding manifest | `export-verification.txt` |
+| Read-only chain/code/pool/core check and quote | Pass | `live-read-evidence.json` |
+| Live activity endpoint | HTTP 200, schema 1, online, RPM 0 | `status-feed-evidence.json` |
+| Whitespace/path/size audit | Pass | `submission-budget.json`; `git diff --check` |
 
-## Commands and results
+Commands ran from the repository root:
 
-All commands were run from the repository root. Node 24.21.0, npm 11.19.0, Vite 7.1.12, TypeScript 5.9.3 and Chromium 141 / Playwright 1.56.1 were used.
+```sh
+npm ci --prefix web --cache web/.cache/npm
+npm run typecheck --prefix web
+npm test --prefix web
+npm run build --prefix web
+npm run verify --prefix web
+PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 PLAYWRIGHT_BROWSERS_PATH="$PWD/test/scratch/browsers" npm run test:browser --prefix web
+IMD_PLAYWRIGHT="$PWD/web/node_modules/playwright/index.mjs" PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 PLAYWRIGHT_BROWSERS_PATH="$PWD/test/scratch/browsers" node .imd/reads/skills/design-critic/scripts/taste.mjs --out test/scratch/taste
+node --import ./web/node_modules/tsx/dist/loader.mjs web/scripts/check-live.ts
+git diff --check
+```
 
-| Check                             | Command                                                                                                                                                                                      | Result                                                                |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Type checking                     | `npm run typecheck --prefix web`                                                                                                                                                             | Passed                                                                |
-| Protocol and state logic          | `npm test --prefix web`                                                                                                                                                                      | 13 tests passed                                                       |
-| Production export                 | `npm run build --prefix web`                                                                                                                                                                 | Passed; relative Vite base; final manifest generated after assets     |
-| Handoff/inventory/hash validation | `npm run verify --prefix web`                                                                                                                                                                | Passed; see `export-verification.txt`                                 |
-| Production browser interactions   | `PLAYWRIGHT_BROWSERS_PATH=/tmp/hamster-browsers npm run test:browser --prefix web`                                                                                                           | 23 scenarios passed; no script errors or failed local resources       |
-| Accessibility automation          | axe-core in the browser suite                                                                                                                                                                | Zero violations in disconnected and connected/expanded utility states |
-| Pinned design probe               | `IMD_PLAYWRIGHT="$PWD/web/node_modules/playwright/index.mjs" PLAYWRIGHT_BROWSERS_PATH=/tmp/hamster-browsers node .imd/reads/skills/design-critic/scripts/taste.mjs --out test/scratch/taste` | 16/16 checks passed; see `taste-results.json`                         |
-| Public chain checks               | `web/node_modules/.bin/tsx web/scripts/check-live.ts`                                                                                                                                        | Read-only chain/code/pool/core checks and quoter simulation passed    |
+The browser suite serves the actual export at `/preview/`, manages its own server and Chromium within one foreground command, and closes both. Public RPC, activity and wallet responses are intercepted for interactions; unexpected external requests are blocked. Mock transaction receipts exercise frontend state without spending funds. The pinned probe ran separately against the export without mocked application state; its external requests were unavailable in that browser run, so those screenshots show loading/offline recovery, not successful live chain reads.
 
-Rollup reported third-party PURE-comment placement warnings during bundling; it removed the annotations and completed successfully. Installation reported transitive deprecated packages/peer warnings. Neither generated dependency trees nor package archives are included in the submission. Browser binaries/caches remain outside the delivered tree.
+The supplied browser MCP could not start because its Chrome distribution was absent. Actual rendering and interaction checks used locally installed Playwright Chromium instead. The host required Playwright's compatible Ubuntu 24.04 browser selection; browser binaries and download artifacts stayed in disposable `test/scratch/`. The initial launcher failure is not counted as a successful browser check. No Docker image, vendored registry or dependency archive is required or submitted.
 
-The 13 protocol tests cover ABI binding; exact amount parsing and bounds; slippage; native and ERC-20 swap encoding; the network’s optional extended tuple; all API activity states; unknown-chain addition and rejected switching; error recovery including nested router/hook bytes; latest qualifying buy age across dust records; and the Rabby URL’s accepted parameters.
+The build reports third-party Rollup annotation warnings; it completes successfully. No local resource failures or browser script exceptions occurred in the interaction suite. Package-manager environment diagnostics were omitted from retained logs; build/test output and results remain.
 
-The browser suite uses the **production export at a subpath**, not Vite’s development server. RPC and EIP-6963 wallet mocks exercise connection, keyboard selection, unknown-chain addition, wrong-chain gating, quotes, review, pre-signing simulation, wallet rejection, ERC-20→Permit2 approval, Permit2→router approval, sell execution/receipt refresh, nap claims, deferred withdrawal, claim redemption, failsafe, winner-event decoding, missing deployed code, API stale/offline states, missing desktop wallets and all phone wallet choices. The script intercepts external requests, so its mocked signing calls cannot reach a chain. Local requests cancelled during intentional reloads are recorded separately from failures.
+## Interaction coverage
 
-## Rendered and interaction evidence
+The 28 browser checks include product/state/action visibility, a neutral disconnected balance state, winner payout links, new core getters, core changes and finalization, EIP-6963 discovery, Tab/Enter connection, Escape and focus return, exact 4902 add-chain fallback, buy quote/review/router simulation, wallet rejection/retry, native buy value, wrong-chain gating, both exact-amount approval steps, sell value/receipt feedback, bounded nap settlement, owed withdrawal, claim redemption and failsafe simulation/submission, corruption of an ABI, missing code, quote errors, unreadable core with sell preserved, missing desktop wallets, four mobile wallet-browser links and Coinbase Smart Wallet, and running/resting/stale/offline API behavior.
 
-The assigned browser tool also inspected the actual public-read production page at `/preview/`, including 390 × 844, 320 × 844 and 1440 × 1000. The final console reported no errors or warnings. The automated suite additionally inspected 768px and connected states at all four widths.
+Viewport checks cover 320, 390, 768 and 1440 CSS pixels. All connected layouts have no horizontal overflow. The pot stays at `y=0` at 25%, 50% and 100% scroll at every tested width, and its number stays within the bar. Its measured height is reserved before the initial header. Long pot/balance values, a full checksummed address and 200% text enlargement also reflow without horizontal scroll. These are browser checks of specific states, not an assertion about all possible content or native zoom.
 
-- `mobile-390.png`: actual live-read first screen, with product, wallet, pot and main trade action.
-- `desktop-1440.png`: actual live-read full page.
-- `keyboard-focus-390.png`: mocked game state; visible keyboard ring on the wallet trigger.
-- `wallet-sheet-390.png`: emulated phone without an injected provider, showing the four wallet-browser choices and Coinbase Smart Wallet.
-- `mobile-measurements.json`: width 390, document width 390, main button bottom **822.70px** within the 844px screen; local font loaded.
-- `render-evidence.json`: actual 320px render has no horizontal overflow and records six measured contrast pairs.
-- `browser-results.json`, `taste-results.json`: machine-readable outcomes.
+At 390 × 844, the measured product bottom is **234.59px**, wallet bottom **310.59px**, main trade-action bottom **689.59px**, and pot-bar bottom **192.59px**; content begins at **208.59px**. `mobile-measurements.json` retains the rectangles and scroll results. The final disconnected mobile and connected desktop screenshots were inspected, as were fixed-pot bottom-scroll and keyboard-focus states. Screenshots depict explicit mock state, not real winnings.
 
-The probe found no horizontal overflow, text overlaps, clipped text, floating controls over content, too-small crowded targets, failing measured contrast, casing/tracking problems, missing metadata, card nesting or inappropriate motion. It counted six type sizes and three weights at desktop. Some inline links/copy controls are smaller than the 44px comfort target; the probe confirmed the relevant 24px/spacing baseline. Primary actions are at least 48px.
+Selected rendered artifacts:
 
-The suite separately stress-tested long balances and a full address at 320/390, plus 200% root text enlargement. All reflow without horizontal scrolling. This is **not** a native 200% zoom test. Native dialog focus containment, Escape, Tab/Enter and focus return were exercised; an actual screen reader was not used.
+- `mobile-390.png`: disconnected product, live-state mock and trade control.
+- `desktop-1440.png`: connected sell and expanded utility/core states.
+- `keyboard-focus-390.png`: keyboard focus on connect.
+- `wallet-sheet-390.png`: mobile wallet choices without injection.
+- `pot-bottom-390.png` and `pot-bottom-1440.png`: fixed bar at the page bottom.
 
 ## Better Interface coverage
 
-The pinned contents/workflow and the core principles of all six domains were read and used during construction, then reviewed against the finished export. The implemented system is documented from the final source in `docs/DESIGN.md`.
+The pinned workflow and core principles from all six domains were read and applied during implementation, then reviewed together against the final export. The documentation method was applied to final source and measured browser evidence. License/provenance notices are retained alongside this file.
 
-| Domain        | Coverage | Evidence and limits                                                                                                                                                                                                                                      |
-| ------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Accessibility | Checked  | Native controls/labels, named modal, skip link, visible focus, keyboard connection/dismissal, status/error regions, reduced motion, axe scans. No native screen-reader, physical-device or forced-colors session.                                        |
-| Layout        | Checked  | Shared edges, mobile control priority, 320/390/768/1440 reflow, full-address/large-balance stress and 200% text enlargement. Native browser zoom and RTL mirroring were not performed; English is the only requested locale.                             |
-| Writing       | Checked  | Consequence-specific controls, explicit test-token context, persistent recovery guidance, API/chain distinction, fees and historical winner semantics. No inferred USD price or fictional live state.                                                    |
-| Typography    | Checked  | Local Nunito loaded at 400/600/800; six-size scale, tabular data, wrapping and no kicker labels; probe passed. Non-Latin glyph/font coverage is not an English-launch requirement.                                                                       |
-| Colors        | Checked  | Role tokens, dark-only system, redundant status labels/checkmarks, browser-computed contrast measurements and probe pass. No unrequested light theme; dynamic art pixels were not presented as text-contrast evidence.                                   |
-| UI details    | Checked  | Hover, focus, pressed, pending, disabled, error, empty and success paths; native disclosure/dialog; local marks and original artwork; reduced motion. Browser Animations-panel playback at 10% speed was not performed for the simple 120ms transitions. |
+| Domain | Coverage | Inspected states and limitations |
+| --- | --- | --- |
+| Accessibility | Checked | Native controls, field label, named dialog, progress group, skip link, explicit focus ring, keyboard connection/dismissal/focus return, inline status/alerts and two axe scans. No screen-reader, physical-device or forced-colors session. Automated scans are not a claim of complete accessibility compliance. |
+| Layout | Checked | Trade-first mobile order, shared edges, 320/390/768/1440 reflow, fixed pot and reserve, scroll positions, full address/large amounts and 200% text enlargement. Native browser zoom and RTL were not tested; English is the requested language. |
+| Writing | Checked | Product name, blunt verb-led controls, no bedtime/cartoon/marketing language, test-token context, fee/claim consequences, owner powers and origin warning, persistent recovery text. No profit promise or invented USD value. |
+| Typography | Checked | Two system font stacks, two weights, six-size token scale, largest pot number, tabular figures and wrapping. Actual system fallback varies; no non-Latin or cross-platform font session was performed. |
+| Colors | Checked | Small semantic palette, redundant status labels, five computed solid contrast pairs and probe contrast checks. No unrequested light theme. Dialog-backdrop compositing and all possible future states are not covered by the five reported pairs. |
+| UI details | Checked | Square surfaces, neutral secondary actions, one accent primary, local wallet marks, native dialog/disclosures, hover/focus/pressed/pending/disabled/error/success states and reduced motion. No endless animation; slow-motion animation-panel review was unnecessary and not performed. |
 
-## Findings, corrections and rechecks
+Computed contrast from `browser-results.json` / `render-evidence.json`: muted identity on canvas **8.51:1**, pot label on bar **16.42:1**, pot number on bar **16.14:1**, primary text on accent fill **15.97:1**, and muted trade note on panel **8.00:1**. These are measured pairs from the inspected state. The probe also passes its measured-text thresholds. Some dense secondary targets are below the comfortable 44px recommendation; the probe confirms the 24px size/spacing floor, while primary actions are 48px or taller and wallet rows are at least 52px.
 
-Locations below refer to the final source where each correction lives.
+## Findings and fixes
 
-| Severity / source                                           | Finding and impact                                                                                                            | Correction and recheck                                                                                                                                                               |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| High — `web/src/Trade.tsx:365`, `web/src/styles.css:951`    | Initial 390px layout pushed the main action below the first screen.                                                           | Shortened the intro/scene and placed the trade action immediately after the amount/help or review. Final measured bottom 822.70px; inspected mobile screenshot.                      |
-| Medium — `web/src/Trade.tsx:167`                            | Disconnected game reads supplied a zero wallet balance and showed an incorrect insufficient-balance error.                    | Balance validation now requires a connected wallet on the correct chain. Browser asserts neutral disconnected state.                                                                 |
-| High — `web/src/transactions.ts:15`                         | A just-connected view could enable review before its reactive signing-client query was ready.                                 | Acquire the wallet client inside the action, with synchronous locking and account/chain checks around simulation. Browser buy/sell/approval/claim flows passed.                      |
-| High — `web/src/App.tsx:241`                                | A persisted connector can briefly lack methods during reload/reconnect, causing a script exception.                           | Guard `getProvider` and catch provider lookup failure. Repeated reload/error-state tests report zero script errors.                                                                  |
-| Medium — `web/src/styles.css:547`, `web/src/styles.css:768` | Under 200% text enlargement, round segments and the footer’s unbroken brand line could overflow.                              | Let segment contents and footer brand wrap; header also wraps. Text enlargement and long-value checks now pass.                                                                      |
-| Medium — `web/src/Wallet.tsx:85`                            | The native dialog initially lacked an explicit accessible name.                                                               | Associate its heading with `aria-labelledby`; disconnected and expanded-state axe scans passed, and keyboard focus return was exercised.                                             |
-| Medium — `web/src/reads.ts:292`                             | Event-window-only buyer age could be unavailable for older buyers; taking the last record’s timestamp would count later dust. | Page backward through recorded cumulative fees using the pinned qualification threshold. Unit tests cover same-buyer dust and page boundaries; browser shows the qualifying buy age. |
-| Medium — `web/src/open-in.ts:15`                            | Rabby requires its `/mobile/` universal-link path with `_cmd=open-dapp` and `dapp`, rather than a generic URL parameter.      | Corrected against the wallet’s own handler and added a parameter/URL-preservation test. Physical app handoff remains unperformed.                                                    |
-| Medium — `web/src/Wallet.tsx:125`                           | A desktop browser with no extension needed an explicit recovery path.                                                         | Sheet explains installation/Coinbase options; generic row detects a missing provider without opening a request. Browser case passed.                                                 |
-| Low — `web/src/Trade.tsx:325`, `web/src/styles.css:197`     | Probe flagged a pill-like small header control, an amount wrapper as a nested card and em-dash loading placeholders.          | Improved header control readability to 16px, made the field wrapper a native label and used ellipses for pending amounts. Final probe passed all 16 checks.                          |
+Locations refer to the final source containing the correction.
 
-No known required worker behavior remains blocked. The root design-document location is the explicit scope exception described above.
+| Severity / source | Finding and impact | Correction and evidence |
+| --- | --- | --- |
+| High — `web/src/config.ts:118`, `web/src/reads.ts:140` | Prior deployment name/ABI and `CORE()` getter could not read the new hook. | Runtime contract binding uses `HamsterNap3D`; ABIs come from the pinned deployed commit; reads use `core()`, `coreFinalized()` and `owner()`. Live chain, ABI verification and browser checks pass. |
+| High — `web/src/App.tsx:226`, `web/src/styles.css:139` | Old pot was inside scrolling content, violating permanent visibility. | Fixed bar plus observed-height reservation, wrapping and scroll padding. Mobile/desktop screenshots and tested scroll positions confirm position and reserved initial space. |
+| Medium — `web/src/App.tsx:398` | New progress wrapper initially used `aria-label` on a generic div; axe reported `aria-prohibited-attr`. | Added `role="group"`; both final axe states have zero violations. |
+| Medium — `web/src/App.tsx:647`, `web/src/reads.ts:253` | New core selection/finalization and historical switches were absent from the old page. | Read-only core section, owner-power disclosure, both event types, log-index ordering and shared history pagination. Mocked change/finalization tests and live getter reads pass. |
+| Medium — `web/src/App.tsx:455` | Decorative running bars could suggest a measured time series the API did not supply. | Replaced with a factual feed/refresh label and actual API RPM, separate from certified progress. Running and resting browser states pass. |
+| Low — `web/src/Trade.tsx:478` | Initial desktop first-screen prose was 93 words against the probe's 90-word budget. | Shortened the origin warning without removing its consequence. Final probe: 87 desktop / 38 mobile words; all 16 checks pass. |
+| Functional — `web/scripts/verify-export.mjs:53` | Prior safe ABI-path regex rejected the digit in `HamsterNap3D`. | Permit alphanumeric Solidity identifiers while retaining a relative `abi/*.json` path shape and independent inventory/path/hash checks. Final export verification passes. |
 
-## Live observations and unperformed checks
+No reproduced high/medium worker behavior remains unresolved. Root design-document placement and Git commit availability are the delivery limitations below.
 
-`live-read-evidence.json` records the public read observation and timestamp. The worker confirmed Sepolia chain ID 11155111, nonempty code at the two application and relevant configured Uniswap addresses, the bound pool ID/token/PoolManager, and SqueekCore’s genesis **1793022600** and round duration **600**. A native-input quote of **0.001 ETH** returned a nonzero NAP output through the supplied quoter using `eth_call`; the file records its exact units and gas estimate. These values are observations, not seeded app data, and can change.
+## Live observations and limits
 
-The API was fetched directly and its documented schema was checked. The final page’s live feed showed resting activity; certified state was read separately from SqueekCore. Reference sources used for integration details were the primary [SqueekChain API documentation](https://docs.squeekchain.com/developers/api/), [Uniswap V4 router source](https://github.com/Uniswap/v4-periphery/blob/main/src/V4Router.sol), [Uniswap wrapped-error definition](https://github.com/Uniswap/v4-core/blob/main/src/libraries/CustomRevert.sol), and Rabby’s [universal-link configuration](https://github.com/RabbyHub/rabby-mobile/blob/develop/apps/mobile/src/constant/universalLink.ts) / [handler](https://github.com/RabbyHub/rabby-mobile/blob/develop/apps/mobile/src/hooks/universalLink.ts). The supplied pinned guides/handoffs remain authoritative for the deployed network and wire format.
+`live-read-evidence.json` records Sepolia chain ID, nonempty application/Uniswap code, pool binding, live game state and the active core's readable configuration. The observed core genesis is **1793735400**, round duration **600**, `coreFinalized=false`, and the pot was zero at that observation. A **0.001 ETH** quoter `eth_call` returned nonzero NAP output; exact units are in the evidence. This does not establish funded router execution or a successful payout. `status-feed-evidence.json` separately records a real HTTP 200 activity response with online hardware-origin measurement and RPM zero. None of these observations is seeded into the app as live state.
 
-No real swap, approval, nap payout, refund withdrawal, claim redemption or failsafe was broadcast. No private key was accessed. Real browser extensions, hardware wallets, Coinbase passkey creation, physical iOS/Android wallet handoffs and all-RPC-down wallet-provider fallback were not exercised end to end. The mock receipt tests establish frontend control flow, not funded execution against deployed protocol code. Contracts and their existing Foundry tests were not modified or rerun by this frontend worker.
+No real approval, swap, nap payout, withdrawal, claim redemption, failsafe, core switch or finalization was broadcast. Real browser extensions, Coinbase passkey creation, physical iOS/Android handoffs, hardware wallets and all-public-RPC-down wallet fallback were not exercised end to end. Contracts and their Foundry suite were preserved and not rerun by this frontend worker. Mock receipts establish frontend flow, not protocol economic correctness.
 
-The actual published gateway/ENS URL is not provided to this worker. Open Graph image paths are relative and the bundled image is a real 1200 × 630 PNG; resolving absolute social-preview URLs on the final host is a publisher check. IPFS/ENS publication and the control plane’s immutable/named asset/config/RPC checks have not run and are not prerequisites to delivering this worker bundle.
+The final hostname is not assigned to this worker. `og:image` points to the actual bundled 1200 × 630 PNG using a relative path; a crawler's final absolute URL is a publication check. IPFS pinning, ENS naming and the control plane's immutable/named HTTP hash and RPC checks have not run and are not claimed as worker validation.
 
-## Completion
+## Delivery state
 
-Implementation and worker validation are complete, with the path exception and unperformed live/device/publication checks stated above. Local Git staging and commit are unavailable: `git add` returned `.git/index.lock: Read-only file system`. No permission bypass was attempted; the files remain in the allowed paths for submission-bundle capture. Source, lockfile, necessary runtime assets, static export, generated deployment manifest and review evidence are retained. Dependencies, caches, registry mirrors and package archives are excluded from the Git submission. The byte/path budget is recorded in `submission-budget.json` after the final inventory.
+Implementation, static export and worker validation are complete within the allowed scope, with the stated design-document location exception. Source, lockfile, verified ABI copies, runtime assets and the regenerated deployment manifest are retained together. Dependencies, caches and browser tooling are excluded from Git; export size is far below the response budget and the full changed-file byte budget is recorded separately.
+
+A Git commit could not be created: `git add -- web dist docs` failed because `.git/index.lock` is on a read-only filesystem. No escalation or metadata bypass was attempted. The complete files remain available in the allowed paths for submission-bundle capture. This report is worker evidence, not independent verification or publication certification.

@@ -1,20 +1,19 @@
-
 > hamster-nap-web@1.0.0 test
-> tsx --test tests/*.test.ts
+> node --import tsx --test tests/*.test.ts
 
-✔ implementation-derived ABI hashes bind the exact deployed interfaces (126.043942ms)
-✔ amount parsing rejects rounded extra precision, negative, zero and overflowing values (1.497249ms)
-✔ slippage preserves integer safety and bounded limits (5.691846ms)
-✔ native buy encodes V4_SWAP, exact input, settlement and minimum take with native value (9.939725ms)
-✔ token sell sends no ETH and reverses direction (1.998291ms)
-✔ extended tuple adds the zero price-limit field only when network requests it (1.729517ms)
-✔ live API distinguishes running, resting, stale and offline, rejects unsupported schemas (1.006432ms)
-✔ unknown chain triggers add with exact supplied parameters, then switches again (0.917318ms)
-✔ switch rejection does not attempt add-chain or signing (0.676456ms)
-✔ contract and wallet errors produce persistent recovery instructions (0.934031ms)
-✔ wrapped router/hook revert bytes decode to actionable errors from the loaded ABI (14.340564ms)
-✔ latest qualifying buy time excludes later dust by the same buyer, across record pages (32.901546ms)
-✔ mobile Rabby link matches its universal-link open-dapp handler and preserves the full page URL (13.557948ms)
+✔ implementation-derived ABI hashes bind the exact deployed interfaces (10.635021ms)
+✔ amount parsing rejects rounded extra precision, negative, zero and overflowing values (1.14127ms)
+✔ slippage preserves integer safety and bounded limits (0.31593ms)
+✔ native buy encodes V4_SWAP, exact input, settlement and minimum take with native value (4.20938ms)
+✔ token sell sends no ETH and reverses direction (1.12212ms)
+✔ extended tuple adds the zero price-limit field only when network requests it (0.78906ms)
+✔ live API distinguishes running, resting, stale and offline, rejects unsupported schemas (1.21523ms)
+✔ unknown chain triggers add with exact supplied parameters, then switches again (0.38672ms)
+✔ switch rejection does not attempt add-chain or signing (0.40361ms)
+✔ contract and wallet errors produce persistent recovery instructions (0.47195ms)
+✔ wrapped router/hook revert bytes decode to actionable errors from the loaded ABI (4.136651ms)
+✔ latest qualifying buy time excludes later dust by the same buyer, across record pages (75.010547ms)
+✔ mobile Rabby link matches its universal-link open-dapp handler and preserves the full page URL (3.74147ms)
 ℹ tests 13
 ℹ suites 0
 ℹ pass 13
@@ -22,4 +21,4 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 15192.025158
+ℹ duration_ms 2705.042986
